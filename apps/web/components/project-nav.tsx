@@ -1,0 +1,7 @@
+'use client';
+import Link from 'next/link';
+export function ProjectNav({id,active}:{id:string;active:string}) { return <nav className="project-tabs" aria-label="Project navigation"><Link className={active==='overview'?'selected':''} href={`/projects/${id}`}>Overview</Link><Link className={active==='requirements'?'selected':''} href={`/projects/${id}/requirements`}>Requirements</Link><Link className={active==='test-cases'?'selected':''} href={`/projects/${id}/test-cases`}>Test cases</Link><Link className={active==='traceability'?'selected':''} href={`/projects/${id}/traceability`}>Traceability</Link></nav>; }
+export async function api(path:string,init?:RequestInit) { const response=await fetch(`/api/v1/${path}`,init); const data=await response.json(); if(!response.ok) throw new Error(data.error?.message || data.message || 'The request could not be completed. Please try again.'); return data; }
+export function locator(value:Record<string,unknown>){return Object.entries(value||{}).filter(([key])=>!['start','end','offset','start_offset','end_offset'].includes(key)).map(([key,v])=>`${key.replace(/_/g,' ')} ${String(v)}`).join(' · ')||'Source paragraph';}
+
+
