@@ -6,6 +6,8 @@ import zipfile
 from pathlib import Path
 
 import fitz
+import io
+from PIL import Image
 from docx import Document
 
 
@@ -54,7 +56,14 @@ def extract(path, mime):
                         paragraphs.append(text)
                     previous = block
                 if not paragraphs:
-                    warnings.append(f"Page {page_number} has no extractable text. OCR is unsupported; upload a text PDF, DOCX, or TXT.")
+                    try:
+                        import pytesseract
+                        pix = page.get_pixmap(dpi=300, alpha=False)
+                        ocr_text = pytesseract.image_to_string(Image.open(io.BytesIO(pix.tobytes("png"))))
+                        paragraphs = [normalize(line) for line in ocr_text.splitlines() if normalize(line)]
+                        warnings.append(f"Page {page_number} was parsed with OCR; verify recognition accuracy." if paragraphs else f"Page {page_number} has no readable text after OCR.")
+                    except (ImportError, OSError):
+                        warnings.append(f"Page {page_number} needs OCR, but the OCR runtime is unavailable.")
                 for paragraph, text in enumerate(paragraphs, 1):
                     blocks.append({"text": text, "locator": {"page": page_number, "paragraph": paragraph}})
     elif mime == "application/vnd.openxmlformats-officedocument.wordprocessingml.document":

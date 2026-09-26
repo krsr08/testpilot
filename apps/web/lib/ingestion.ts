@@ -1,11 +1,10 @@
 import { createHash } from 'node:crypto';
 import { extname, basename } from 'node:path';
-import { readFile, unlink } from 'node:fs/promises';
 import { z } from 'zod';
 import { Prisma } from '@prisma/client';
 import { db } from './db';
 import { ApiError, membership } from './http';
-import { storagePath, writeSource } from './storage';
+import { deleteStorage, readStorage, scanUpload, writeSource } from './storage';
 import { saveCaseRevision } from './case-history';
 
 const json = (v: unknown) => JSON.parse(JSON.stringify(v)) as Prisma.InputJsonValue;
@@ -39,7 +38,7 @@ export async function ingestion(req:Request,path:string[],userId:string):Promise
  }
  if(path[0]==='sources'&&path[1]){
   z.uuid().parse(path[1]);const source=await db.sourceDocument.findFirst({where:{id:path[1],deletedAt:null}});if(!source)throw new ApiError(404,'NOT_FOUND','Source not found.');await membership(source.projectId,userId);
-  if(path[2]==='download'&&req.method==='GET'){const bytes=await readFile(storagePath(source.storageKey));return new Response(bytes,{headers:{'Content-Type':source.mime,'Content-Disposition':`attachment; filename*=UTF-8''${encodeURIComponent(source.filename)}`,'Cache-Control':'private, no-store'}});}
+  if(path[2]==='download'&&req.method==='GET'){const bytes=await readStorage(source.storageKey);return new Response(bytes,{headers:{'Content-Type':source.mime,'Content-Disposition':`attachment; filename*=UTF-8''${encodeURIComponent(source.filename)}`,'Cache-Control':'private, no-store'}});}
   if(path.length===2&&req.method==='DELETE'){
    if(await db.generationRun.count({where:{projectId:source.projectId}}))throw new ApiError(409,'SOURCE_IN_USE','Sources cannot be deleted after generation. Create a new project or revise the requirements.');
    if(['queued','running'].includes(source.status))throw new ApiError(409,'JOB_IN_PROGRESS','Wait for extraction to finish before deleting this source.');
@@ -74,8 +73,9 @@ export async function ingestion(req:Request,path:string[],userId:string):Promise
    if(extension==='.docx'&&!bytes.subarray(0,2).equals(Buffer.from('PK')))throw new ApiError(422,'VALIDATION_ERROR','This file is not a valid DOCX.');
    if(extension==='.txt'){try{new TextDecoder('utf-8',{fatal:true}).decode(bytes);}catch{throw new ApiError(422,'VALIDATION_ERROR','TXT files must use UTF-8 encoding.');}}
   }else{const body=z.object({text:z.string().trim().min(1).max(50000),filename:z.string().max(180).optional()}).strict().parse(await req.json());bytes=Buffer.from(body.text,'utf8');filename=body.filename||'Pasted user story.txt';mime='text/plain';extension='.txt';}
-  const storageKey=await writeSource(bytes,extension.slice(1));
-  try{const result=await db.$transaction(async tx=>{const source=await tx.sourceDocument.create({data:{projectId:project.id,filename,mime,size:bytes.length,sha256:createHash('sha256').update(bytes).digest('hex'),storageKey,createdBy:userId,updatedBy:userId}});const job=await createJob(tx,project.id,userId,'extract_source',source.id);await audit(tx,project.id,userId,'source_uploaded','SourceDocument',source.id,undefined,{filename,size:bytes.length});return {source,job_id:job.id};});return Response.json(result,{status:202});}catch(e){await unlink(storagePath(storageKey)).catch(()=>{});throw e;}
+  try{await scanUpload(bytes);}catch(error){throw new ApiError(422,'MALWARE_SCAN_FAILED',error instanceof Error?error.message:'Upload failed malware scanning.');}
+  const storageKey=await writeSource(bytes,extension.slice(1),mime);
+  try{const result=await db.$transaction(async tx=>{const source=await tx.sourceDocument.create({data:{projectId:project.id,filename,mime,size:bytes.length,sha256:createHash('sha256').update(bytes).digest('hex'),storageKey,createdBy:userId,updatedBy:userId}});const job=await createJob(tx,project.id,userId,'extract_source',source.id);await audit(tx,project.id,userId,'source_uploaded','SourceDocument',source.id,undefined,{filename,size:bytes.length});return {source,job_id:job.id};});return Response.json(result,{status:202});}catch(e){await deleteStorage(storageKey).catch(()=>{});throw e;}
  }
  if(path[2]==='requirements'&&path.length===3&&req.method==='GET'){
   const args=pageArgs(url);const rows=await db.requirement.findMany({...args,where:{projectId:project.id,deletedAt:null,...(url.searchParams.get('status')?{status:url.searchParams.get('status')!}:{})},include:{source:true}});return Response.json(pageResult(rows,args.take,'requirements'));

@@ -2,8 +2,8 @@
   "openapi": "3.1.0",
   "info": {
     "title": "TestPilot AI API",
-    "version": "0.3.0",
-    "description": "Implemented Milestones 0\u20133. Requests use documented snake_case controls; persisted records use camelCase. Demo authentication requires DEMO_AUTH=true outside production. All resource requests verify seeded-user workspace membership."
+    "version": "2.1.0",
+    "description": "TestPilot AI enterprise API. Production authentication uses OIDC bearer tokens; every project request enforces organization-backed workspace membership and role authorization."
   },
   "servers": [
     {
@@ -1583,6 +1583,75 @@
                 }
               }
             }
+          },
+          "default": {
+            "description": "Structured API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/projects/{projectId}/integrations/jira/sync": {
+      "post": {
+        "summary": "Push approved cases to Jira/Xray or import linked remote revisions",
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "caseIds"
+                ],
+                "properties": {
+                  "caseIds": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 100,
+                    "items": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  },
+                  "direction": {
+                    "enum": [
+                      "push",
+                      "pull"
+                    ],
+                    "default": "push"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Synchronization completed"
+          },
+          "422": {
+            "description": "Invalid case state or remote payload"
+          },
+          "503": {
+            "description": "Jira integration is not configured"
           },
           "default": {
             "description": "Structured API error",

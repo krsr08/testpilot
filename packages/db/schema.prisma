@@ -11,26 +11,83 @@ model User {
   id          String       @id @default(uuid()) @db.Uuid
   email       String       @unique
   name        String
+  externalSubject String? @unique
+  updatedAt   DateTime     @updatedAt
   createdAt   DateTime     @default(now())
   memberships Membership[]
+}
+
+model Organization {
+  id          String       @id @default(uuid()) @db.Uuid
+  name        String
+  slug        String       @unique
+  ssoDomain   String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  workspaces  Workspace[]
+  integrations IntegrationConnection[]
 }
 
 model Workspace {
   id          String       @id @default(uuid()) @db.Uuid
   name        String
+  organizationId String     @db.Uuid
   createdAt   DateTime     @default(now())
   memberships Membership[]
   projects    Project[]
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
 }
 
 model Membership {
   workspaceId String    @db.Uuid
   userId      String    @db.Uuid
-  role        String    @default("owner")
+  role        Role      @default(TESTER)
   workspace   Workspace @relation(fields: [workspaceId], references: [id])
   user        User      @relation(fields: [userId], references: [id])
 
   @@id([workspaceId, userId])
+}
+
+enum Role {
+  ADMIN
+  QA_LEAD
+  TESTER
+  VIEWER
+}
+
+model IntegrationConnection {
+  id             String       @id @default(uuid()) @db.Uuid
+  organizationId String       @db.Uuid
+  kind           String
+  name           String
+  baseUrl        String
+  projectKey     String
+  encryptedToken String
+  enabled        Boolean      @default(true)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  externalLinks  ExternalCaseLink[]
+
+  @@unique([organizationId, kind, name])
+  @@index([organizationId])
+}
+
+model ExternalCaseLink {
+  id           String   @id @default(uuid()) @db.Uuid
+  testCaseId   String   @db.Uuid
+  integrationId String  @db.Uuid
+  externalKey  String
+  externalUrl  String
+  contentHash  String
+  syncedAt     DateTime @default(now())
+  testCase     TestCase @relation(fields: [testCaseId], references: [id], onDelete: Cascade)
+  integration  IntegrationConnection @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+
+  @@unique([integrationId, externalKey])
+  @@unique([testCaseId, integrationId])
 }
 
 model Project {
@@ -218,6 +275,7 @@ model TestCase {
   steps          TestStep[]
   links          RequirementCaseLink[]
   revisions      TestCaseRevision[]
+  externalLinks  ExternalCaseLink[]
 
   @@unique([projectId, stableCode])
   @@index([projectId, status, createdAt])

@@ -1,0 +1,3 @@
+image: { app: testpilot-app:latest, worker: testpilot-worker:latest }
+replicas: 2
+secretName: testpilot-secrets

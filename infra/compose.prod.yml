@@ -1,0 +1,38 @@
+name: testpilot-enterprise
+services:
+  app:
+    build: { context: .., dockerfile: infra/docker/Dockerfile.app }
+    env_file: ../.env
+    environment: { DATABASE_URL: postgresql://testpilot:testpilot_local@postgres:5432/testpilot, REDIS_URL: redis://redis:6379, CLAMAV_HOST: clamav, STORAGE_DIR: /data }
+    ports: ["3000:3000"]
+    depends_on: { migrate: { condition: service_completed_successfully }, redis: { condition: service_healthy } }
+    read_only: true
+    tmpfs: [/tmp]
+    volumes: ["storage_data:/data"]
+  worker:
+    build: { context: .., dockerfile: infra/docker/Dockerfile.worker }
+    env_file: ../.env
+    environment: { DATABASE_URL: postgresql://testpilot:testpilot_local@postgres:5432/testpilot, REDIS_URL: redis://redis:6379, CLAMAV_HOST: clamav, STORAGE_DIR: /data, PYTHON_BIN: /opt/venv/bin/python }
+    depends_on: { migrate: { condition: service_completed_successfully }, redis: { condition: service_healthy } }
+    volumes: ["storage_data:/data"]
+  migrate:
+    build: { context: .., dockerfile: infra/docker/Dockerfile.worker }
+    env_file: ../.env
+    environment: { DATABASE_URL: postgresql://testpilot:testpilot_local@postgres:5432/testpilot }
+    command: ["npm","run","db:migrate"]
+    depends_on: { postgres: { condition: service_healthy } }
+    restart: "no"
+  postgres:
+    image: postgres:17.6-alpine
+    environment: { POSTGRES_USER: testpilot, POSTGRES_PASSWORD: testpilot_local, POSTGRES_DB: testpilot }
+    volumes: ["postgres_data:/var/lib/postgresql/data"]
+    healthcheck: { test: ["CMD-SHELL", "pg_isready -U testpilot"], interval: 5s, timeout: 3s, retries: 20 }
+  redis:
+    image: redis:7.4.5-alpine
+    command: ["redis-server","--appendonly","yes"]
+    volumes: ["redis_data:/data"]
+    healthcheck: { test: ["CMD","redis-cli","ping"], interval: 5s, timeout: 3s, retries: 20 }
+  clamav:
+    image: clamav/clamav:1.4
+    volumes: ["clamav_data:/var/lib/clamav"]
+volumes: { postgres_data: {}, redis_data: {}, clamav_data: {}, storage_data: {} }

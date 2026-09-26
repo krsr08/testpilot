@@ -1,22 +1,16 @@
 import { randomUUID } from 'node:crypto';
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile, rm } from 'node:fs/promises';
 import path from 'node:path';
+import net from 'node:net';
+import { DeleteObjectCommand, GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 
-export function storagePath(key: string): string {
-  if (!/^[a-zA-Z0-9][a-zA-Z0-9._-]*$/.test(key) || key.includes('..')) throw new Error('Invalid storage key');
-  const root = path.resolve(/* turbopackIgnore: true */ process.env.STORAGE_DIR ?? './var');
-  return path.join(/* turbopackIgnore: true */ root, key);
-}
-
-export async function writeSource(buffer: Buffer, extension: string): Promise<string> {
-  if (!['pdf', 'docx', 'txt'].includes(extension.toLowerCase())) throw new Error('Unsupported source extension');
-  const key = `${randomUUID()}.${extension.toLowerCase()}`;
-  const target = storagePath(key);
-  await mkdir(path.dirname(target), { recursive: true });
-  await writeFile(target, buffer, { flag: 'wx' });
-  return key;
-}
-
-export async function readStorage(key: string): Promise<Buffer> {
-  return readFile(/* turbopackIgnore: true */ storagePath(key));
-}
+function validKey(key:string){if(!/^[a-zA-Z0-9][a-zA-Z0-9._/-]*$/.test(key)||key.includes('..')||key.startsWith('/'))throw new Error('Invalid storage key');return key;}
+export function storagePath(key:string){validKey(key);const root=path.resolve(/* turbopackIgnore: true */process.env.STORAGE_DIR??'./var');const target=path.resolve(root,key);if(!target.startsWith(root+path.sep))throw new Error('Invalid storage key');return target;}
+function s3(){return new S3Client({region:process.env.AWS_REGION||'us-east-1',endpoint:process.env.AWS_S3_ENDPOINT||undefined,forcePathStyle:process.env.S3_FORCE_PATH_STYLE==='true'});}
+function bucket(){if(!process.env.S3_BUCKET_NAME)throw new Error('S3_BUCKET_NAME is required');return process.env.S3_BUCKET_NAME;}
+export function storageMode(){return process.env.STORAGE_MODE==='s3'?'s3':'local';}
+export async function putStorage(key:string,buffer:Buffer,contentType='application/octet-stream'){validKey(key);if(storageMode()==='local'){const target=storagePath(key);await mkdir(path.dirname(target),{recursive:true});await writeFile(target,buffer,{flag:'wx'});return;}await s3().send(new PutObjectCommand({Bucket:bucket(),Key:key,Body:buffer,ContentType:contentType,ServerSideEncryption:process.env.AWS_KMS_KEY_ID?'aws:kms':'AES256',SSEKMSKeyId:process.env.AWS_KMS_KEY_ID||undefined}));}
+export async function writeSource(buffer:Buffer,extension:string,contentType='application/octet-stream'){if(!['pdf','docx','txt'].includes(extension.toLowerCase()))throw new Error('Unsupported source extension');const key=`sources/${randomUUID()}.${extension.toLowerCase()}`;await putStorage(key,buffer,contentType);return key;}
+export async function readStorage(key:string){validKey(key);if(storageMode()==='local')return readFile(/* turbopackIgnore: true */storagePath(key));const out=await s3().send(new GetObjectCommand({Bucket:bucket(),Key:key}));if(!out.Body)throw new Error('Stored object has no body');return Buffer.from(await out.Body.transformToByteArray());}
+export async function deleteStorage(key:string){validKey(key);if(storageMode()==='local')return rm(storagePath(key),{force:true});await s3().send(new DeleteObjectCommand({Bucket:bucket(),Key:key}));}
+export async function scanUpload(buffer:Buffer){if(process.env.CLAMAV_ENABLED!=='true')return;await new Promise<void>((resolve,reject)=>{const socket=net.createConnection(Number(process.env.CLAMAV_PORT||3310),process.env.CLAMAV_HOST||'127.0.0.1');let reply='';socket.setTimeout(15000);socket.on('connect',()=>{socket.write('zINSTREAM\0');for(let offset=0;offset<buffer.length;offset+=64*1024){const chunk=buffer.subarray(offset,offset+64*1024),size=Buffer.alloc(4);size.writeUInt32BE(chunk.length);socket.write(size);socket.write(chunk);}socket.write(Buffer.alloc(4));});socket.on('data',d=>reply+=d);socket.on('end',()=>reply.includes('OK')&&!reply.includes('FOUND')?resolve():reject(new Error('Upload rejected by malware scanner.')));socket.on('error',()=>reject(new Error('Malware scanner is unavailable.')));socket.on('timeout',()=>{socket.destroy();reject(new Error('Malware scan timed out.'));});});}

@@ -5,20 +5,22 @@ const prisma = new PrismaClient();
 const userId = '00000000-0000-4000-8000-000000000001';
 const workspaceId = '00000000-0000-4000-8000-000000000002';
 const projectId = '00000000-0000-4000-8000-000000000003';
+const organizationId = '00000000-0000-4000-8000-000000000010';
 
 async function main() {
   await prisma.$transaction(async (tx) => {
+    await tx.organization.upsert({ where: { id: organizationId }, update: {}, create: { id: organizationId, name: 'Demo Organization', slug: 'demo' } });
     await tx.user.upsert({
       where: { id: userId }, update: {},
       create: { id: userId, email: 'demo@testpilot.local', name: 'Demo Tester' },
     });
     await tx.workspace.upsert({
       where: { id: workspaceId }, update: {},
-      create: { id: workspaceId, name: 'Demo Workspace' },
+      create: { id: workspaceId, organizationId, name: 'Demo Workspace' },
     });
     await tx.membership.upsert({
       where: { workspaceId_userId: { workspaceId, userId } }, update: {},
-      create: { workspaceId, userId, role: 'owner' },
+      create: { workspaceId, userId, role: 'ADMIN' },
     });
     await tx.project.upsert({
       where: { id: projectId }, update: {},

@@ -27,3 +27,13 @@ An all-status workbook includes rejected cases and their explicit review statuse
 Exports contain exactly Summary, Requirements, Scenarios, Test Cases, RTM, and Warnings. User-supplied values beginning with formula-significant characters, including after whitespace/control characters, are written as escaped literal strings. Cells exceeding Excel's 32,767-character limit are safely truncated and identified on Warnings; complete records remain in the application. Unicode names and cells are preserved. No formulas or macros are generated.
 
 Private UUID-named XLSX files expire after 24 hours. The running worker checks expired exports every 60 seconds and deletes only recorded UUID `.xlsx` files, never source originals. Downloads require workspace membership and reject expired/unavailable artifacts; a new idempotency key creates a fresh export. Metadata and audit history remain. Full retention/deletion policy, malware-scanner integration, encryption at rest, backup automation, production authentication, and independent security review remain production requirements; the prototype must use non-sensitive sample data.
+
+## Enterprise identity and tenant boundary — 2026-09-26
+
+Enterprise API authentication verifies OIDC JWTs against issuer, audience and remote JWKS. SAML uses an enterprise identity broker that emits OIDC tokens; direct SAML assertion parsing is excluded to avoid maintaining a second session and signature-validation stack. Users are pre-provisioned and bind to the immutable provider subject on first login. Workspace membership remains the authorization edge, now anchored to an organization, with explicit role gates. This avoids unsafe generic Prisma middleware that would append tenant fields to models that do not own them.
+
+## Enterprise storage and integrations — 2026-09-26
+
+Local storage remains available for development and single-host Compose. Production may use the S3 adapter with KMS or managed AES-256 encryption. ClamAV fails closed when enabled. OCR is page-level Tesseract fallback with warnings and human confirmation; it does not claim semantic reconstruction of arbitrary complex tables.
+
+Jira/Xray credentials remain in the deployment secret manager and are represented in database configuration as environment-managed. Push creates or updates approved cases and persists external mapping hashes. Pull imports remote title and Xray steps into a new local draft revision so external edits cannot silently remain approved. Jira/Xray schemas vary by edition and configuration, so target-instance field mapping is an explicit rollout check.

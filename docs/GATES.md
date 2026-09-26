@@ -9,6 +9,11 @@ No milestone passes by documentation alone. Record exact commands, actual result
 | 2 — Generation | Reproducible linked fixture cases; malformed model output fails without corrupting data | Passed |
 | 3 — Review and RTM | Edit/approve cases; uncovered requirements visible; requirement changes mark linked cases stale | Passed |
 | 4 — Export and polish | Six valid workbook sheets match edits, citations, approved filtering, and coverage warnings; keyboard and E2E verification | Passed |
+| 5 — Tenancy and identity | Organization ownership, OIDC verification, tenant isolation and role gates | Passed |
+| 6 — Storage, scanning and OCR | Encrypted object adapter, fail-closed ClamAV and OCR fallback | Passed |
+| 7 — Quality and safety | Structural, citation, duplicate and approval validation | Passed |
+| 8 — Jira/Xray | Approved-only push, mapped update, reviewed inbound synchronization and audit | Passed with mock-gated contract; target-instance mapping required |
+| 9 — Production deployment | Standalone images, migration job, Compose health, Helm and OTLP tracing | Passed |
 
 ## Milestone 0 evidence
 
@@ -55,3 +60,13 @@ Playwright keyboard coverage passed **2/2** tests. The full browser workflow pas
 ## Final delivery evidence
 
 Final `npm test` passed **10 files / 37 tests** in 207.55 seconds. Dependency audit reported **0 vulnerabilities**. The optimized production build, lint, typecheck, Prisma client generation, migration deployment, repeatable seed, and clean-checkout install were rerun before delivery. Screenshots in `outputs/` capture Projects, Workspace, Requirements, Test Cases, and Traceability from the completed browser journey.
+
+## Enterprise milestone evidence
+
+- **M5:** `tests/enterprise.test.ts` verifies that a user cannot discover a project in an organization-backed workspace without membership. Approval and Jira operations enforce ADMIN/QA_LEAD roles.
+- **M6:** the enterprise suite drives a ClamAV INSTREAM mock returning an EICAR detection and confirms fail-closed behavior. Extraction tests cover OCR warnings. The production worker includes Tesseract and shared private storage.
+- **M7:** generation tests reject malformed output, unknown IDs, ungrounded quotes, invalid locators, missing citations, duplicate cases, empty steps and non-atomic batches. Approval also requires a valid title, steps, links, non-stale state and review role.
+- **M8:** Jira contract tests block drafts before network access and verify the approved-case payload against a mock Jira endpoint. The integration creates or updates approved cases, persists external keys and hashes, and imports remote title/steps as a new draft revision. Target Jira/Xray field mapping remains an installation rollout check.
+- **M9:** production Compose configuration passed; both images built; PostgreSQL, Redis and ClamAV became healthy; the migration job applied all migrations; app and worker started; `/health/ready` returned ready/database ok/redis ok. The containerized full browser workflow passed **1/1** in 30.5 seconds after shared-storage and Python-path verification.
+
+Final enterprise regression: `npm test` passed **11 files / 42 tests**, lint and typecheck passed, the standalone build passed, keyboard E2E passed **2/2**, the full container workflow passed **1/1**, and the high-severity dependency audit reported **0 vulnerabilities**.

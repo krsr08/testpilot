@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: testpilot-app }
+spec:
+  replicas: {{ .Values.replicas }}
+  selector: { matchLabels: { app: testpilot-app } }
+  template:
+    metadata: { labels: { app: testpilot-app } }
+    spec:
+      containers:
+        - name: app
+          image: {{ .Values.image.app }}
+          ports: [{ containerPort: 3000 }]
+          envFrom: [{ secretRef: { name: {{ .Values.secretName }} } }]
+          readinessProbe: { httpGet: { path: /health/ready, port: 3000 }, initialDelaySeconds: 10, periodSeconds: 10 }
+          livenessProbe: { httpGet: { path: /health/live, port: 3000 }, initialDelaySeconds: 10, periodSeconds: 20 }
+          securityContext: { allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, runAsNonRoot: true }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: testpilot-worker }
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: testpilot-worker } }
+  template:
+    metadata: { labels: { app: testpilot-worker } }
+    spec:
+      containers:
+        - name: worker
+          image: {{ .Values.image.worker }}
+          envFrom: [{ secretRef: { name: {{ .Values.secretName }} } }]
+          securityContext: { allowPrivilegeEscalation: false, runAsNonRoot: true }
+---
+apiVersion: v1
+kind: Service
+metadata: { name: testpilot-app }
+spec:
+  selector: { app: testpilot-app }
+  ports: [{ port: 80, targetPort: 3000 }]

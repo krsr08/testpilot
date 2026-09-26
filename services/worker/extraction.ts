@@ -2,8 +2,10 @@ import { execFile } from 'node:child_process';
 import path from 'node:path';
 import { promisify } from 'node:util';
 import { Prisma } from '@prisma/client';
+import { writeFile, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 import { db } from '../../packages/db';
-import { storagePath } from '../../apps/web/lib/storage';
+import { readStorage, storageMode, storagePath } from '../../apps/web/lib/storage';
 import { extractionSchema, segmentRequirements } from './segmentation';
 
 const execute = promisify(execFile);
@@ -16,9 +18,11 @@ export async function extractSource(jobId: string) {
   await db.sourceDocument.update({ where: { id: source.id }, data: { status: 'running', error: null } });
   await db.job.update({ where: { id: jobId }, data: { stage: 'extracting text', progress: 20 } });
   let output: string;
+  const inputPath=storageMode()==='local'?storagePath(source.storageKey):path.join(tmpdir(),`testpilot-${source.id}${path.extname(source.filename)}`);
   try {
+    if(storageMode()==='s3')await writeFile(inputPath,await readStorage(source.storageKey),{flag:'wx'});
     const result = await execute(process.env.PYTHON_BIN || 'python', [
-      path.resolve('services/worker/extract.py'), storagePath(source.storageKey), source.mime,
+      path.resolve('services/worker/extract.py'), inputPath, source.mime,
     ], { timeout: 120_000, maxBuffer: 8 * 1024 * 1024, windowsHide: true });
     output = result.stdout;
   } catch (error) {
@@ -32,7 +36,7 @@ export async function extractSource(jobId: string) {
       } catch { /* Keep the sanitized fallback. */ }
     }
     throw new ProcessingError(message, { cause: error });
-  }
+  } finally { if(storageMode()==='s3')await rm(inputPath,{force:true}); }
   const extraction = extractionSchema.parse(JSON.parse(output));
   const candidates = segmentRequirements(extraction);
   if (candidates.length > 1000) throw new ProcessingError('Document exceeds 1,000 requirement candidates. Split it into smaller documents.');

@@ -1,0 +1,6 @@
+apiVersion: v2
+name: testpilot
+description: TestPilot AI enterprise web and worker
+type: application
+version: 0.1.0
+appVersion: "2.1"

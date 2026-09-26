@@ -5,20 +5,23 @@ import { ingestion } from '../../../../lib/ingestion';
 import { generationApi } from '../../../../lib/generation-api';
 import { reviewApi } from '../../../../lib/review-api';
 import { exportApi } from '../../../../lib/export-api';
+import { jiraApi } from '../../../../lib/jira-api';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 async function handle(req: Request, context: {params:Promise<{path:string[]}>}) {
  try {
   const user=await actor(req); const {path}=await context.params; const url=new URL(req.url);
   req=await boundedRequest(req);
+  const jira=await jiraApi(req,path,user.id);if(jira)return jira;
   const exported=await exportApi(req,path,user.id);if(exported)return exported;
   const reviewed=await reviewApi(req,path,user.id);if(reviewed)return reviewed;
   const generated=await generationApi(req,path,user.id);if(generated)return generated;
   const ingested=await ingestion(req,path,user.id);if(ingested)return ingested;
   if(path[0]==='projects' && path.length===1) {
-   const member=await db.membership.findFirst({where:{userId:user.id}});
+   const member=await db.membership.findFirst({where:{userId:user.id},include:{workspace:true}});
    if(!member) throw new ApiError(403,'FORBIDDEN','Workspace access required.');
    if(req.method==='POST') {
+    if(member.role==='VIEWER')throw new ApiError(403,'FORBIDDEN','Viewer access cannot create projects.');
     const data=z.object({name:z.string().trim().min(1).max(120),description:z.string().max(2000).default(''),domain:z.string().max(120).default('')}).strict().parse(await req.json());
     const project=await db.$transaction(async tx=>{const p=await tx.project.create({data:{...data,workspaceId:member.workspaceId,createdBy:user.id,updatedBy:user.id}});await tx.auditEvent.create({data:{projectId:p.id,actorId:user.id,action:'project_created',entityType:'Project',entityId:p.id,afterJson:{name:p.name}}});return p;});
     return Response.json(project,{status:201});

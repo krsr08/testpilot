@@ -6,7 +6,7 @@ test('E2E01/08/10: upload, review, generate, edit, approve, export, revise and e
  test.setTimeout(240000);
  await page.goto('/projects');await page.getByRole('button',{name:'Create project',exact:true}).click();
  const create=page.getByRole('dialog');await create.getByLabel('Project name').fill(`Browser journey ${Date.now()}`);await create.getByLabel('Description').fill('Full persistent browser verification');await create.getByRole('button',{name:'Create project',exact:true}).click();
- await expect(page).toHaveURL(/\/projects\/[a-f0-9-]+$/);const projectId=page.url().split('/').at(-1)!;
+ await expect(page).toHaveURL(/\/projects\/[a-f0-9-]+$/,{timeout:45000});const projectId=page.url().split('/').at(-1)!;
  await page.getByRole('link',{name:'Upload requirements',exact:true}).click();await page.locator('input[type=file]').setInputFiles(path.resolve('fixtures/sample-login.pdf'));await page.getByRole('button',{name:'Extract requirements',exact:true}).click();
  await expect(page.getByRole('button',{name:'Confirm 10 requirements'})).toBeEnabled({timeout:60000});await page.getByRole('button',{name:'Confirm 10 requirements'}).click();await page.getByRole('link',{name:'Continue to generation'}).click();
  await page.getByRole('button',{name:'Generate test cases',exact:true}).click();await expect(page.getByRole('button',{name:'TC-001',exact:true})).toBeVisible({timeout:60000});

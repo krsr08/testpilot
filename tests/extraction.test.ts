@@ -33,7 +33,7 @@ describe('source-grounded extraction', () => {
   it('reports scanned pages without fabricating requirements', () => {
     const parsed = extract('scanned.pdf', 'application/pdf');
     expect(segmentRequirements(parsed)).toEqual([]);
-    expect(parsed.warnings.join(' ')).toContain('OCR is unsupported');
+    expect(parsed.warnings.join(' ')).toContain('OCR');
   });
 
   it('keeps source instructions and spreadsheet-like strings as data', () => {

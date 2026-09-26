@@ -2,10 +2,12 @@ import { execFile } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 import { mkdir, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
+import { tmpdir } from 'node:os';
+import { readFile } from 'node:fs/promises';
 import { promisify } from 'node:util';
 import { Prisma } from '@prisma/client';
 import { db } from '../../packages/db';
-import { storagePath } from '../../apps/web/lib/storage';
+import { deleteStorage, putStorage } from '../../apps/web/lib/storage';
 import { buildTraceability } from '../../apps/web/lib/traceability';
 import { ProcessingError } from './extraction';
 
@@ -49,29 +51,30 @@ export async function buildExport(jobId: string) {
   const job = await db.job.findUniqueOrThrow({ where: { id: jobId } });
   const record = await db.export.findUniqueOrThrow({ where: { id: job.entityId } });
   if (record.status === 'succeeded' && record.storageKey && record.expiresAt && record.expiresAt > new Date()) return;
-  const key = `${randomUUID()}.xlsx`;
-  const inputKey = `${randomUUID()}.json`;
+  const key = `exports/${randomUUID()}.xlsx`;
+  const inputPath = path.join(tmpdir(),`${randomUUID()}.json`), outputPath=path.join(tmpdir(),`${randomUUID()}.xlsx`);
   try {
     await db.export.update({ where: { id: record.id }, data: { status: 'running', error: null } });
     await db.job.update({ where: { id: jobId }, data: { stage: 'snapshotting reviewed data', progress: 20 } });
     const payload = await createExportPayload(record.projectId, record.approvedOnly);
     const slug = payload.project.name.normalize('NFKC').replace(/[^\p{L}\p{N}_-]+/gu, '-').replace(/^-+|-+$/g, '').slice(0, 80) || 'project';
     const filename = `TestPilot_${slug}_${payload.exportedAt.slice(0, 10)}.xlsx`;
-    await mkdir(path.dirname(storagePath(key)), { recursive: true });
-    await writeFile(storagePath(inputKey), JSON.stringify(payload), { encoding: 'utf8', flag: 'wx' });
+    await mkdir(path.dirname(inputPath), { recursive: true });
+    await writeFile(inputPath, JSON.stringify(payload), { encoding: 'utf8', flag: 'wx' });
     await db.job.update({ where: { id: jobId }, data: { stage: 'building six-sheet workbook', progress: 65 } });
-    await execute(process.env.PYTHON_BIN || 'python', [path.resolve('services/worker/export.py'), storagePath(inputKey), storagePath(key)], { timeout: 120_000, maxBuffer: 1024 * 1024, windowsHide: true });
+    await execute(process.env.PYTHON_BIN || 'python', [path.resolve('services/worker/export.py'), inputPath, outputPath], { timeout: 120_000, maxBuffer: 1024 * 1024, windowsHide: true });
+    await putStorage(key,await readFile(outputPath),'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     await db.$transaction([
       db.export.update({ where: { id: record.id }, data: { status: 'succeeded', storageKey: key, filename, error: null, completedAt: new Date(), expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000) } }),
       db.auditEvent.create({ data: { projectId: record.projectId, actorId: job.createdBy, action: 'export_created', entityType: 'export', entityId: record.id, afterJson: { approvedOnly: record.approvedOnly, caseCount: payload.cases.length, sheetCount: 6 } } }),
     ]);
   } catch (error) {
-    await rm(storagePath(key), { force: true });
+    await deleteStorage(key).catch(()=>{});
     const message = 'Workbook could not be created. Confirm the Python export dependencies and available disk space, then retry.';
     await db.export.update({ where: { id: record.id }, data: { status: 'failed', error: message } });
     throw new ProcessingError(message, { cause: error });
   } finally {
-    await rm(storagePath(inputKey), { force: true });
+    await rm(inputPath, { force: true });await rm(outputPath,{force:true});
   }
 }
 
@@ -82,7 +85,7 @@ export async function cleanupExpiredExports() {
   try {
     const expired = await db.export.findMany({ where: { status: 'succeeded', expiresAt: { lt: new Date() } }, take: 100 });
     for (const record of expired) {
-      if (record.storageKey && /^[0-9a-f-]{36}\.xlsx$/i.test(record.storageKey)) await rm(storagePath(record.storageKey), { force: true });
+      if (record.storageKey && /^exports\/[0-9a-f-]{36}\.xlsx$/i.test(record.storageKey)) await deleteStorage(record.storageKey);
       await db.export.update({ where: { id: record.id }, data: { status: 'expired', storageKey: null } });
     }
   } finally { cleaning = false; }
