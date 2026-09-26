@@ -154,6 +154,8 @@ model Requirement {
   sourceLocator    Json                  @default("{}")
   excerpt          String                @default("")
   confidence       String                @default("review")
+  category         String                @default("FUNCTIONAL_REQUIREMENT")
+  parentStory      String                @default("")
   inferred         Boolean               @default(false)
   revision         Int                   @default(1)
   version          Int                   @default(1)

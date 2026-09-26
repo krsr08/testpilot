@@ -20,6 +20,10 @@ Configure `JIRA_BASE_URL`, `JIRA_TOKEN`, and `JIRA_PROJECT_KEY`. `POST /api/v1/p
 
 Set `OTEL_EXPORTER_OTLP_ENDPOINT` to enable automatic Node.js tracing. Secrets belong in a secret manager and the Helm `testpilot-secrets` Secret, never values files.
 
+## Structural extraction agent
+
+`EXTRACTOR_MODE=fixture` is the offline default. It deterministically groups wrapped clauses and filters titles, story wrappers, and short narrative headings when explicit acceptance criteria exist. Set `EXTRACTOR_MODE=external` with `MODEL_BASE_URL`, `MODEL_NAME`, and optionally `MODEL_API_KEY` to insert the source-grounded structural agent between raw file parsing and requirement persistence. The agent must cite contiguous source block IDs and copy requirement text from those blocks exactly. Unsupported text, invalid categories, malformed confidence values, or invented locators fail the job without saving partial requirements.
+
 ## Production launch
 
 Build and run `infra/compose.prod.yml`, or deploy `infra/helm`. Run database migrations as a controlled pre-deployment job. Validate backup restoration, object retention, identity-provider logout, scanner availability, rate limits, Jira field mappings, and tenant deletion in the target environment before accepting production traffic.

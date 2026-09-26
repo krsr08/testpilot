@@ -1,5 +1,7 @@
 import { execFileSync } from 'node:child_process';
 import path from 'node:path';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { describe, expect, it } from 'vitest';
 import { extractionSchema, segmentRequirements } from '../services/worker/segmentation';
 import { storagePath } from '../apps/web/lib/storage';
@@ -63,6 +65,20 @@ describe('source-grounded extraction', () => {
       'The reset link must expire after 30 minutes.',
       'The link must work only once.',
     ]);
+  });
+
+  it('structural fixture agent removes titles and story wrappers when criteria exist', () => {
+    const lines = ['Product Search & Filtering', 'As a returning shopper I want to refine results so that I can find products.', 'Acceptance Criteria:', '- Collapsible sidebar must display available filters.', '- Applying a filter updates the product list.', '- Active filters must be displayed above results.', '- No products message must appear when no items match.'];
+    const extraction = { text: lines.join('\n'), pageCount: null, warnings: [], pageMap: lines.map((text, index) => ({ text, offset: 0, locator: { paragraph: index + 1 } })) };
+    const directory = mkdtempSync(path.join(tmpdir(), 'testpilot-agent-')), input = path.join(directory, 'input.json');
+    writeFileSync(input, JSON.stringify(extraction));
+    try {
+      const python = process.env.PYTHON_BIN || (process.platform === 'win32' ? '.venv/Scripts/python.exe' : '.venv/bin/python');
+      const output = JSON.parse(execFileSync(python, ['services/worker/agent_extractor.py', input], { encoding: 'utf8', windowsHide: true, env: { ...process.env, EXTRACTOR_MODE: 'fixture' } }));
+      expect(output.requirements).toHaveLength(4);
+      expect(output.requirements.map((item: {text:string}) => item.text)).toEqual(lines.slice(3).map(line => line.slice(2)));
+      expect(output.requirements.every((item: {category:string}) => item.category === 'ACCEPTANCE_CRITERIA')).toBe(true);
+    } finally { rmSync(directory, { recursive: true, force: true }); }
   });
 
   it('blocks traversal outside private storage', () => {

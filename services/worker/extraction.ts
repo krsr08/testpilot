@@ -4,12 +4,22 @@ import { promisify } from 'node:util';
 import { Prisma } from '@prisma/client';
 import { writeFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
+import { randomUUID } from 'node:crypto';
+import { z } from 'zod';
 import { db } from '../../packages/db';
 import { readStorage, storageMode, storagePath } from '../../apps/web/lib/storage';
-import { extractionSchema, segmentRequirements } from './segmentation';
+import { extractionSchema } from './segmentation';
 
 const execute = promisify(execFile);
 export class ProcessingError extends Error {}
+const agentSchema=z.object({requirements:z.array(z.object({text:z.string().trim().min(11).max(10_000),excerpt:z.string().min(1).max(50_000),sourceLocator:z.record(z.string(),z.json()),confidence:z.enum(['high','review']),category:z.enum(['FUNCTIONAL_REQUIREMENT','USER_STORY','ACCEPTANCE_CRITERIA']),parentStory:z.string().max(300)}).strict()).max(1000)}).strict();
+
+async function structuralExtract(extraction:z.infer<typeof extractionSchema>){
+ const input=path.join(tmpdir(),`testpilot-agent-${randomUUID()}.json`);
+ try{await writeFile(input,JSON.stringify(extraction),{flag:'wx'});const result=await execute(process.env.PYTHON_BIN||'python',[path.resolve('services/worker/agent_extractor.py'),input],{timeout:90_000,maxBuffer:8*1024*1024,windowsHide:true});return agentSchema.parse(JSON.parse(result.stdout)).requirements;}
+ catch(error){const failure=error as {stdout?:string};let detail='Structural extraction failed. No requirements were saved.';if(failure.stdout)try{const parsed=JSON.parse(failure.stdout);if(typeof parsed.error==='string')detail=parsed.error;}catch{detail='Structural extraction returned an unreadable error.';}throw new ProcessingError(detail,{cause:error});}
+ finally{await rm(input,{force:true});}
+}
 
 export async function extractSource(jobId: string) {
   const job = await db.job.findUniqueOrThrow({ where: { id: jobId } });
@@ -38,7 +48,7 @@ export async function extractSource(jobId: string) {
     throw new ProcessingError(message, { cause: error });
   } finally { if(storageMode()==='s3')await rm(inputPath,{force:true}); }
   const extraction = extractionSchema.parse(JSON.parse(output));
-  const candidates = segmentRequirements(extraction);
+  const candidates = await structuralExtract(extraction);
   if (candidates.length > 1000) throw new ProcessingError('Document exceeds 1,000 requirement candidates. Split it into smaller documents.');
   await db.job.update({ where: { id: jobId }, data: { stage: 'saving requirements', progress: 75 } });
   await db.$transaction(async (tx) => {
@@ -54,11 +64,11 @@ export async function extractSource(jobId: string) {
       const requirement = await tx.requirement.create({ data: {
         projectId: source.projectId, sourceId: source.id,
         stableCode: `REQ-${String(first + index).padStart(3, '0')}`,
-        ...candidate, createdBy: job.createdBy, updatedBy: job.createdBy,
+        text:candidate.text,excerpt:candidate.excerpt,sourceLocator:candidate.sourceLocator,confidence:candidate.confidence,category:candidate.category,parentStory:candidate.parentStory,createdBy: job.createdBy, updatedBy: job.createdBy,
       } });
       await tx.requirementRevision.create({ data: {
         requirementId: requirement.id, revision: 1, createdBy: job.createdBy,
-        data: { text: requirement.text, included: true, sourceLocator: candidate.sourceLocator, excerpt: candidate.excerpt },
+        data: { text: requirement.text, included: true, sourceLocator: candidate.sourceLocator, excerpt: candidate.excerpt,category:candidate.category,parentStory:candidate.parentStory },
       } });
       await tx.sourceCitation.create({ data: {
         entityType: 'requirement', entityId: requirement.id, sourceId: source.id,
