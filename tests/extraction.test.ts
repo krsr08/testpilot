@@ -42,6 +42,29 @@ describe('source-grounded extraction', () => {
     expect(segmentRequirements(parsed)[0].text).toBe(text);
   });
 
+  it('joins hard-wrapped clauses and retains their source range', () => {
+    const parsed = extractionSchema.parse({ text: '1. The service must allow users\nto request a reset token.\n2. Tokens must expire.', pageCount: null, warnings: [], pageMap: [
+      { text: '1. The service must allow users', offset: 0, locator: { paragraph: 1 } },
+      { text: 'to request a reset token.', offset: 32, locator: { paragraph: 2 } },
+      { text: '2. Tokens must expire.', offset: 58, locator: { paragraph: 3 } },
+    ] });
+    const candidates = segmentRequirements(parsed);
+    expect(candidates).toHaveLength(2);
+    expect(candidates[0]).toMatchObject({ text: 'The service must allow users to request a reset token.', sourceLocator: { paragraph: 1, endParagraph: 2 } });
+    expect(candidates[0].excerpt).toBe('1. The service must allow users\nto request a reset token.');
+  });
+
+  it('keeps a user-story statement together and separates acceptance criteria', () => {
+    const lines = ['As a registered user,', 'I want to reset my password', 'So that I can regain access.', 'Acceptance Criteria:', '- The reset link must expire after 30 minutes.', '- The link must work only once.'];
+    const parsed = extractionSchema.parse({ text: lines.join('\n'), pageCount: null, warnings: [], pageMap: lines.map((text, index) => ({ text, offset: lines.slice(0, index).join('\n').length + (index ? 1 : 0), locator: { paragraph: index + 1 } })) });
+    const candidates = segmentRequirements(parsed);
+    expect(candidates.map(item => item.text)).toEqual([
+      'As a registered user, I want to reset my password So that I can regain access.',
+      'The reset link must expire after 30 minutes.',
+      'The link must work only once.',
+    ]);
+  });
+
   it('blocks traversal outside private storage', () => {
     expect(() => storagePath('../.env')).toThrow('Invalid storage key');
     expect(() => storagePath('..\\.env')).toThrow('Invalid storage key');
