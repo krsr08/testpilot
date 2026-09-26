@@ -44,7 +44,7 @@ Additional verification: `npx vitest run tests/integration/generation.test.ts -t
 
 ## Milestone 3 evidence
 
-`npx vitest run tests/integration/review-traceability.test.ts` passed **4 tests**. The suite edits and versions a case, approves and rejects cases, creates a manual case, updates requirement links, confirms uncovered/covered RTM states, and verifies that revising a requirement marks every linked active case stale while retaining history. `npm run lint` and `npm run typecheck` passed at the gate.
+`npx vitest run tests/integration/review.test.ts tests/traceability.test.ts` passed **4 tests**. The suite edits and versions a case, approves and rejects cases, creates a manual case, updates requirement links, confirms uncovered/covered RTM states, and verifies that revising a requirement marks every linked active case stale while retaining history. `npm run lint` and `npm run typecheck` passed at the gate.
 
 ## Milestone 4 evidence
 
