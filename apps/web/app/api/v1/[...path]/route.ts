@@ -9,6 +9,8 @@ import { jiraApi } from '../../../../lib/jira-api';
 import { enterpriseApi } from '../../../../lib/enterprise-api';
 import { buildDocument } from '../../../../lib/document-builder';
 import { authoringApi } from '../../../../lib/authoring-api';
+import { intelligenceApi } from '../../../../lib/intelligence-api';
+import { billingApi } from '../../../../lib/billing-api';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 async function handle(req: Request, context: {params:Promise<{path:string[]}>}) {
@@ -16,8 +18,10 @@ async function handle(req: Request, context: {params:Promise<{path:string[]}>}) 
   const user=await actor(req); const {path}=await context.params; const url=new URL(req.url);
   req=await boundedRequest(req);
   const enterprise=await enterpriseApi(req,path,user.id);if(enterprise)return enterprise;
+  const billing=await billingApi(req,path,user.id);if(billing)return billing;
   if(path[0]==='document-builder'&&path.length===1&&req.method==='POST')return Response.json(await buildDocument(await req.json()));
   const authored=await authoringApi(req,path,user.id);if(authored)return authored;
+  const intelligent=await intelligenceApi(req,path,user.id);if(intelligent)return intelligent;
   const jira=await jiraApi(req,path,user.id);if(jira)return jira;
   const exported=await exportApi(req,path,user.id);if(exported)return exported;
   const reviewed=await reviewApi(req,path,user.id);if(reviewed)return reviewed;

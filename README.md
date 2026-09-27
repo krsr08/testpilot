@@ -70,3 +70,9 @@ Set `GENERATOR_MODE=external`, `MODEL_BASE_URL` (an OpenAI-compatible base URL s
 ## Data and operational limits
 
 See [data policy](docs/DATA_POLICY.md), [runbook](docs/runbook.md), [API usage](docs/API.md), [enterprise deployment](docs/ENTERPRISE.md), and [decisions](docs/DECISIONS.md). Development uses demo authentication and local storage. Enterprise mode adds OIDC, organization-backed tenancy, role gates, encrypted S3-compatible storage, ClamAV, OCR, Jira/Xray synchronization, containers, Helm and OTLP tracing. Target identity, object-storage and Jira configurations still require deployment-specific acceptance. Generated workbooks expire after 24 hours, and fixture generation always creates drafts.
+
+## Reliability and automation workflow
+
+The **Intelligence** tab in each project shows requirement change impact, human correction patterns, and generated Playwright assets. Confirming a revised requirement snapshot creates the change report automatically and sends affected linked cases back to review. Approve current cases before generating automation.
+
+For managed billing, configure Stripe Checkout and webhook values from `.env.example`; forward Stripe events to `/api/webhooks/stripe`. The free plan allows three documents per month. The local demo seed is Pro and does not contact Stripe.

@@ -6,6 +6,7 @@ import { db } from './db';
 import { ApiError, membership } from './http';
 import { deleteStorage, readStorage, scanUpload, writeSource } from './storage';
 import { saveCaseRevision } from './case-history';
+import {assertDocumentAllowance} from './billing-api';
 
 const json = (v: unknown) => JSON.parse(JSON.stringify(v)) as Prisma.InputJsonValue;
 export async function audit(tx: Prisma.TransactionClient, projectId:string, actorId:string, action:string, entityType:string, entityId:string, before?:unknown, after?:unknown) {
@@ -16,6 +17,7 @@ export async function createJob(tx:Prisma.TransactionClient,projectId:string,cre
  const job=await tx.job.create({data:{projectId,createdBy,kind,entityId,payload}});await tx.outboxEvent.create({data:{jobId:job.id}});return job;
 }
 export async function ingestTextSource(projectId:string,userId:string,text:string,filename:string){
+ await assertDocumentAllowance(projectId);
  const clean=z.string().trim().min(1).max(100000).parse(text),safeName=basename(filename).split('').filter(character=>character.charCodeAt(0)>=32).join('').slice(0,180)||'Authored requirements.txt',bytes=Buffer.from(clean,'utf8');
  try{await scanUpload(bytes);}catch(error){throw new ApiError(422,'MALWARE_SCAN_FAILED',error instanceof Error?error.message:'Document failed malware scanning.');}
  const storageKey=await writeSource(bytes,'txt','text/plain');
@@ -66,6 +68,7 @@ export async function ingestion(req:Request,path:string[],userId:string):Promise
  if(path[0]!=='projects'||!path[1]||path.length<3)return;
  z.uuid().parse(path[1]);const project=await membership(path[1],userId);
  if(path[2]==='sources'&&req.method==='POST'){
+  await assertDocumentAllowance(project.id);
   if(Number(req.headers.get('content-length')||0)>11*1024*1024)throw new ApiError(422,'VALIDATION_ERROR','Files must be 10 MB or smaller.');
   let bytes:Buffer,filename:string,mime:string,extension:string;
   if(req.headers.get('content-type')?.includes('multipart/form-data')){

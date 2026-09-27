@@ -70,3 +70,19 @@ Final `npm test` passed **10 files / 37 tests** in 207.55 seconds. Dependency au
 - **M9:** production Compose configuration passed; both images built; PostgreSQL, Redis and ClamAV became healthy; the migration job applied all migrations; app and worker started; `/health/ready` returned ready/database ok/redis ok. The containerized full browser workflow passed **1/1** in 30.5 seconds after shared-storage and Python-path verification.
 
 Final enterprise regression: `npm test` passed **11 files / 42 tests**, lint and typecheck passed, the standalone build passed, keyboard E2E passed **2/2**, the full container workflow passed **1/1**, and the high-severity dependency audit reported **0 vulnerabilities**.
+
+## Bootstrapped roadmap implementation gate — 2026-09-27
+
+| Phase | Implemented evidence | External acceptance still required |
+| --- | --- | --- |
+| 0 | Strict Zod output, three-attempt repair, validated Gherkin | Production model credentials and provider acceptance |
+| 1 | PDF/DOCX/TXT/story extraction, ambiguity/completeness, critique, review UI | Customer document privacy review for each external provider |
+| 2 | 20-document regression corpus, 5% gate, error-safe output, second-pass critique | Add anonymized customer examples as consented data becomes available |
+| 3 | Stripe Checkout/webhook adapter, free usage limit, correction analytics | Stripe keys, products, tax/business setup, and five real paying customers |
+| 4 | Versioned Playwright drafts, Page-style locator helper, runtime fallback reporting, human repair approval | Execute generated suites against each customer's real application and optional Git PR credentials |
+| 5 | Persisted stable-code semantic change sets and automatic linked-case stale propagation | Customer revision corpus acceptance against domain-specific equivalence cases |
+| 6 | OIDC/JWKS SSO, workspace roles, immutable audit, Jira/Xray adapter | Identity-provider and Jira tenant configuration/acceptance |
+
+Engineering gates do not claim commercial outcomes or third-party certification. Production enablement requires the credentials and customer environments listed above.
+
+Final roadmap regression: `npm test` passed **16 files / 55 tests**, `npm run test:e2e` passed **5/5 browser journeys**, lint and typecheck passed, the optimized Next.js build completed, all ten Prisma migrations applied, the repeatable seed completed, and the high-severity dependency audit reported **0 vulnerabilities**.

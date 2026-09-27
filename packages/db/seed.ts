@@ -22,6 +22,7 @@ async function main() {
       where: { workspaceId_userId: { workspaceId, userId } }, update: {},
       create: { workspaceId, userId, role: 'ADMIN' },
     });
+    await tx.workspaceSubscription.upsert({where:{workspaceId},update:{plan:'pro',status:'active'},create:{workspaceId,plan:'pro',status:'active'}});
     await tx.project.upsert({
       where: { id: projectId }, update: {},
       create: {

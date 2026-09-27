@@ -8,36 +8,50 @@ datasource db {
 }
 
 model User {
-  id          String       @id @default(uuid()) @db.Uuid
-  email       String       @unique
-  name        String
-  externalSubject String? @unique
-  updatedAt   DateTime     @updatedAt
-  createdAt   DateTime     @default(now())
-  memberships Membership[]
+  id              String       @id @default(uuid()) @db.Uuid
+  email           String       @unique
+  name            String
+  externalSubject String?      @unique
+  updatedAt       DateTime     @updatedAt
+  createdAt       DateTime     @default(now())
+  memberships     Membership[]
 }
 
 model Organization {
-  id          String       @id @default(uuid()) @db.Uuid
-  name        String
-  slug        String       @unique
-  ssoDomain   String?
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  workspaces  Workspace[]
+  id           String                  @id @default(uuid()) @db.Uuid
+  name         String
+  slug         String                  @unique
+  ssoDomain    String?
+  createdAt    DateTime                @default(now())
+  updatedAt    DateTime                @updatedAt
+  workspaces   Workspace[]
   integrations IntegrationConnection[]
 }
 
 model Workspace {
-  id          String       @id @default(uuid()) @db.Uuid
-  name        String
-  organizationId String     @db.Uuid
-  createdAt   DateTime     @default(now())
-  memberships Membership[]
-  projects    Project[]
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  id             String                 @id @default(uuid()) @db.Uuid
+  name           String
+  organizationId String                 @db.Uuid
+  createdAt      DateTime               @default(now())
+  memberships    Membership[]
+  projects       Project[]
+  subscription   WorkspaceSubscription?
+  organization   Organization           @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@index([organizationId])
+}
+
+model WorkspaceSubscription {
+  id                   String    @id @default(uuid()) @db.Uuid
+  workspaceId          String    @unique @db.Uuid
+  plan                 String    @default("free")
+  status               String    @default("active")
+  stripeCustomerId     String?   @unique
+  stripeSubscriptionId String?   @unique
+  currentPeriodEnd     DateTime?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+  workspace            Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 }
 
 model Membership {
@@ -58,17 +72,17 @@ enum Role {
 }
 
 model IntegrationConnection {
-  id             String       @id @default(uuid()) @db.Uuid
-  organizationId String       @db.Uuid
+  id             String             @id @default(uuid()) @db.Uuid
+  organizationId String             @db.Uuid
   kind           String
   name           String
   baseUrl        String
   projectKey     String
   encryptedToken String
-  enabled        Boolean      @default(true)
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  enabled        Boolean            @default(true)
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  organization   Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   externalLinks  ExternalCaseLink[]
 
   @@unique([organizationId, kind, name])
@@ -76,77 +90,80 @@ model IntegrationConnection {
 }
 
 model ExternalCaseLink {
-  id           String   @id @default(uuid()) @db.Uuid
-  testCaseId   String   @db.Uuid
-  integrationId String  @db.Uuid
-  externalKey  String
-  externalUrl  String
-  contentHash  String
-  syncedAt     DateTime @default(now())
-  testCase     TestCase @relation(fields: [testCaseId], references: [id], onDelete: Cascade)
-  integration  IntegrationConnection @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+  id            String                @id @default(uuid()) @db.Uuid
+  testCaseId    String                @db.Uuid
+  integrationId String                @db.Uuid
+  externalKey   String
+  externalUrl   String
+  contentHash   String
+  syncedAt      DateTime              @default(now())
+  testCase      TestCase              @relation(fields: [testCaseId], references: [id], onDelete: Cascade)
+  integration   IntegrationConnection @relation(fields: [integrationId], references: [id], onDelete: Cascade)
 
   @@unique([integrationId, externalKey])
   @@unique([testCaseId, integrationId])
 }
 
 model Project {
-  id                 String                @id @default(uuid()) @db.Uuid
-  workspaceId        String                @db.Uuid
-  name               String
-  description        String                @default("")
-  domain             String                @default("")
-  type               String                @default("APPLICATION")
-  requirementCounter Int                   @default(0)
-  scenarioCounter    Int                   @default(0)
-  caseCounter        Int                   @default(0)
-  version            Int                   @default(1)
-  createdBy          String                @db.Uuid
-  updatedBy          String                @db.Uuid
-  createdAt          DateTime              @default(now())
-  updatedAt          DateTime              @updatedAt
-  workspace          Workspace             @relation(fields: [workspaceId], references: [id])
-  sources            SourceDocument[]
-  requirements       Requirement[]
-  snapshots          RequirementSnapshot[]
-  runs               GenerationRun[]
-  scenarios          Scenario[]
-  testCases          TestCase[]
-  jobs               Job[]
-  exports            Export[]
-  auditEvents        AuditEvent[]
-  authoringDocuments RequirementDocument[]
+  id                  String                 @id @default(uuid()) @db.Uuid
+  workspaceId         String                 @db.Uuid
+  name                String
+  description         String                 @default("")
+  domain              String                 @default("")
+  type                String                 @default("APPLICATION")
+  requirementCounter  Int                    @default(0)
+  scenarioCounter     Int                    @default(0)
+  caseCounter         Int                    @default(0)
+  version             Int                    @default(1)
+  createdBy           String                 @db.Uuid
+  updatedBy           String                 @db.Uuid
+  createdAt           DateTime               @default(now())
+  updatedAt           DateTime               @updatedAt
+  workspace           Workspace              @relation(fields: [workspaceId], references: [id])
+  sources             SourceDocument[]
+  requirements        Requirement[]
+  snapshots           RequirementSnapshot[]
+  runs                GenerationRun[]
+  scenarios           Scenario[]
+  testCases           TestCase[]
+  jobs                Job[]
+  exports             Export[]
+  auditEvents         AuditEvent[]
+  authoringDocuments  RequirementDocument[]
+  feedbackEvents      FeedbackEvent[]
+  automationArtifacts AutomationArtifact[]
+  changeSets          RequirementChangeSet[]
 
   @@unique([workspaceId, name])
   @@index([createdBy, updatedAt])
 }
 
 model RequirementDocument {
-  id           String   @id @default(uuid()) @db.Uuid
-  projectId    String   @db.Uuid
+  id           String                        @id @default(uuid()) @db.Uuid
+  projectId    String                        @db.Uuid
   title        String
-  templateType String   @default("SIMPLE_PRD")
+  templateType String                        @default("SIMPLE_PRD")
   content      String
-  status       String   @default("DRAFT")
-  version      Int      @default(1)
-  createdBy    String   @db.Uuid
-  updatedBy    String   @db.Uuid
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  project      Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  status       String                        @default("DRAFT")
+  version      Int                           @default(1)
+  createdBy    String                        @db.Uuid
+  updatedBy    String                        @db.Uuid
+  createdAt    DateTime                      @default(now())
+  updatedAt    DateTime                      @updatedAt
+  project      Project                       @relation(fields: [projectId], references: [id], onDelete: Cascade)
   revisions    RequirementDocumentRevision[]
 
   @@index([projectId, updatedAt])
 }
 
 model RequirementDocumentRevision {
-  id         String   @id @default(uuid()) @db.Uuid
-  documentId String   @db.Uuid
+  id         String              @id @default(uuid()) @db.Uuid
+  documentId String              @db.Uuid
   version    Int
   title      String
   content    String
-  createdBy  String   @db.Uuid
-  createdAt  DateTime @default(now())
+  createdBy  String              @db.Uuid
+  createdAt  DateTime            @default(now())
   document   RequirementDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
 
   @@unique([documentId, version])
@@ -284,38 +301,110 @@ model Scenario {
 }
 
 model TestCase {
-  id             String                @id @default(uuid()) @db.Uuid
-  projectId      String                @db.Uuid
-  scenarioId     String?               @db.Uuid
-  runId          String?               @db.Uuid
-  stableCode     String
-  title          String
-  type           String                @default("positive")
-  priority       String                @default("medium")
-  preconditions  String                @default("")
-  testData       String                @default("")
-  postconditions String                @default("")
-  rationale      String                @default("")
-  reviewerNotes  String                @default("")
-  status         String                @default("draft")
-  stale          Boolean               @default(false)
-  manual         Boolean               @default(false)
-  version        Int                   @default(1)
-  createdBy      String                @db.Uuid
-  updatedBy      String                @db.Uuid
-  createdAt      DateTime              @default(now())
-  updatedAt      DateTime              @updatedAt
-  deletedAt      DateTime?
-  project        Project               @relation(fields: [projectId], references: [id])
-  scenario       Scenario?             @relation(fields: [scenarioId], references: [id])
-  run            GenerationRun?        @relation(fields: [runId], references: [id])
-  steps          TestStep[]
-  links          RequirementCaseLink[]
-  revisions      TestCaseRevision[]
-  externalLinks  ExternalCaseLink[]
+  id                  String                @id @default(uuid()) @db.Uuid
+  projectId           String                @db.Uuid
+  scenarioId          String?               @db.Uuid
+  runId               String?               @db.Uuid
+  stableCode          String
+  title               String
+  type                String                @default("positive")
+  priority            String                @default("medium")
+  preconditions       String                @default("")
+  testData            String                @default("")
+  postconditions      String                @default("")
+  rationale           String                @default("")
+  reviewerNotes       String                @default("")
+  status              String                @default("draft")
+  stale               Boolean               @default(false)
+  manual              Boolean               @default(false)
+  version             Int                   @default(1)
+  createdBy           String                @db.Uuid
+  updatedBy           String                @db.Uuid
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+  deletedAt           DateTime?
+  project             Project               @relation(fields: [projectId], references: [id])
+  scenario            Scenario?             @relation(fields: [scenarioId], references: [id])
+  run                 GenerationRun?        @relation(fields: [runId], references: [id])
+  steps               TestStep[]
+  links               RequirementCaseLink[]
+  revisions           TestCaseRevision[]
+  externalLinks       ExternalCaseLink[]
+  feedbackEvents      FeedbackEvent[]
+  automationArtifacts AutomationArtifact[]
 
   @@unique([projectId, stableCode])
   @@index([projectId, status, createdAt])
+}
+
+model FeedbackEvent {
+  id          String    @id @default(uuid()) @db.Uuid
+  projectId   String    @db.Uuid
+  testCaseId  String?   @db.Uuid
+  category    String
+  disposition String
+  original    Json?
+  corrected   Json?
+  note        String    @default("")
+  createdBy   String    @db.Uuid
+  createdAt   DateTime  @default(now())
+  project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  testCase    TestCase? @relation(fields: [testCaseId], references: [id], onDelete: SetNull)
+
+  @@index([projectId, category, createdAt])
+}
+
+model AutomationArtifact {
+  id         String                       @id @default(uuid()) @db.Uuid
+  projectId  String                       @db.Uuid
+  testCaseId String                       @db.Uuid
+  framework  String                       @default("playwright")
+  filename   String
+  source     String
+  selectors  Json                         @default("[]")
+  status     String                       @default("draft")
+  version    Int                          @default(1)
+  createdBy  String                       @db.Uuid
+  updatedBy  String                       @db.Uuid
+  createdAt  DateTime                     @default(now())
+  updatedAt  DateTime                     @updatedAt
+  project    Project                      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  testCase   TestCase                     @relation(fields: [testCaseId], references: [id], onDelete: Cascade)
+  repairs    AutomationRepairSuggestion[]
+
+  @@unique([testCaseId, framework])
+  @@index([projectId, updatedAt])
+}
+
+model AutomationRepairSuggestion {
+  id              String             @id @default(uuid()) @db.Uuid
+  artifactId      String             @db.Uuid
+  failedSelector  Json
+  workingSelector Json
+  proposedSource  String
+  status          String             @default("pending")
+  createdBy       String             @db.Uuid
+  reviewedBy      String?            @db.Uuid
+  createdAt       DateTime           @default(now())
+  reviewedAt      DateTime?
+  artifact        AutomationArtifact @relation(fields: [artifactId], references: [id], onDelete: Cascade)
+
+  @@index([artifactId, status, createdAt])
+}
+
+model RequirementChangeSet {
+  id           String   @id @default(uuid()) @db.Uuid
+  projectId    String   @db.Uuid
+  fromSnapshot String?
+  toSnapshot   String
+  summary      Json
+  changes      Json
+  createdBy    String   @db.Uuid
+  createdAt    DateTime @default(now())
+  project      Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, toSnapshot])
+  @@index([projectId, createdAt])
 }
 
 model TestStep {

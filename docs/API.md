@@ -53,3 +53,17 @@ Base URL: `http://localhost:3000/api/v1`. JSON is used except multipart original
 Errors have `{"code":"VERSION_CONFLICT","message":"...","field_errors":{},"request_id":"..."}`. HTTP 422 indicates request validation, 409 a version/state/idempotency conflict, 401 disabled demo authentication, 403 origin/access rejection, 404 inaccessible/missing resource, and 429 generation rate limiting. Version conflicts may carry `field_errors.current_version`. Reload and reconcile edits instead of blindly retrying a stale mutation.
 
 Generation allows at most 100 snapshot requirements and 500 cases; provider requests are batched at 10 requirements. A project permits at most 10 new generation runs per minute and one active run per snapshot. The deterministic fixture provider is the default. External configuration sends reviewed requirements to the disclosed model destination and validates output before persistence; document text is data, never operating instructions.
+
+## Reliability, billing, automation and impact APIs
+
+- `GET /api/v1/projects/{id}/intelligence` returns persisted semantic change sets, correction categories, generation history and Playwright artifacts.
+- `POST /api/v1/projects/{id}/feedback` records a classified human correction. Case edits and rejections also create feedback automatically.
+- `POST /api/v1/projects/{id}/automation/generate` accepts approved, non-stale `testCaseIds` and creates versioned Playwright TypeScript drafts.
+- `GET /api/v1/projects/{id}/automation/{artifactId}/download` downloads the private TypeScript draft.
+- `POST /api/v1/projects/{id}/automation/{artifactId}/fallback` records a runtime selector fallback and creates a repair suggestion. The working selector must already be in the governed ranked candidate list.
+- `POST /api/v1/projects/{id}/automation/{artifactId}/repairs/{suggestionId}` with `approve` or `reject` applies or rejects the repair under human control.
+- `GET /api/v1/billing` returns the workspace plan and current monthly document use.
+- `POST /api/v1/billing/checkout` is administrator-only and creates a managed Stripe subscription Checkout session.
+- `POST /api/webhooks/stripe` accepts signature-verified Stripe lifecycle events. It is intentionally outside the authenticated application router and trusts only Stripe signatures.
+
+The free plan allows three new source documents per workspace per UTC calendar month. The seeded local workspace uses a Pro sandbox subscription so demos and automated tests remain deterministic. Configure `STRIPE_SECRET_KEY`, `STRIPE_PRICE_ID`, and `STRIPE_WEBHOOK_SECRET` to activate Checkout; credentials are never sent to the browser.

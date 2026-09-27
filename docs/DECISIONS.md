@@ -61,3 +61,13 @@ Enterprise API authentication verifies OIDC JWTs against issuer, audience and re
 Local storage remains available for development and single-host Compose. Production may use the S3 adapter with KMS or managed AES-256 encryption. ClamAV fails closed when enabled. OCR is page-level Tesseract fallback with warnings and human confirmation; it does not claim semantic reconstruction of arbitrary complex tables.
 
 Jira/Xray credentials remain in the deployment secret manager and are represented in database configuration as environment-managed. Push creates or updates approved cases and persists external mapping hashes. Pull imports remote title and Xray steps into a new local draft revision so external edits cannot silently remain approved. Jira/Xray schemas vary by edition and configuration, so target-instance field mapping is an explicit rollout check.
+
+## Roadmap reliability and commercial controls
+
+The roadmap phases are implemented as product capabilities while keeping external activation separate from code completion. A 20-document anonymized regression corpus enforces a maximum five-percent regression budget. BRD output receives an independent deterministic grounding and negative-path critique after schema validation. Human case edits and rejections persist as categorized feedback signals.
+
+Requirement snapshot confirmation now persists an ADDED/MODIFIED/DELETED/UNCHANGED change set and moves every linked case affected by a modified or deleted requirement back to draft/stale review. This is deterministic stable-code comparison; the lexical similarity helper supports diagnostics but never suppresses a stable-code change, avoiding false negatives caused by an arbitrary semantic threshold.
+
+Playwright artifacts are generated only from approved, non-stale cases. Ranked locator candidates are embedded in the generated source. Runtime fallbacks are reported as repair suggestions, and changing the artifact requires an explicit approve action. The product creates a governed suggested source revision rather than writing to a Git provider directly; repository PR creation remains an optional deployment integration.
+
+Stripe is the sole payment authority. TestPilot stores subscription identifiers and status, verifies webhook signatures, and never handles card data. Free usage is measured from persisted source documents. The local seeded workspace is Pro to keep test fixtures independent of calendar usage.

@@ -12,3 +12,6 @@ export const BRDAnalysisSchema=z.object({
 
 export type BRDGenerationInput=z.infer<typeof BRDGenerationInputSchema>;
 export type BRDAnalysis=z.infer<typeof BRDAnalysisSchema>;
+
+export const BRDCritiqueSchema=z.object({coverageScore:z.number().min(0).max(100),requiresHumanReview:z.boolean(),findings:z.array(z.object({severity:z.enum(['info','warning','critical']),featureTitle:z.string().min(1).max(200),issue:z.string().min(1).max(1000),suggestion:z.string().min(1).max(2000)}).strict()).max(100)}).strict();
+export type BRDCritique=z.infer<typeof BRDCritiqueSchema>;

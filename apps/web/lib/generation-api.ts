@@ -5,6 +5,7 @@ import { db } from './db';
 import { ApiError, membership } from './http';
 import { audit,createJob,pageArgs,pageResult } from './ingestion';
 import { createQueue } from './queue';
+import {recordSnapshotImpact} from './intelligence-api';
 const types=z.array(z.enum(['positive','negative','boundary','permission','other'])).min(1).max(5);
 export const snapshotItems=(rows:any[])=>rows.sort((a,b)=>a.stableCode.localeCompare(b.stableCode)).map(r=>({id:r.id,stableCode:r.stableCode,text:r.text,revision:r.revision,sourceId:r.sourceId,excerpt:r.excerpt,sourceLocator:r.sourceLocator,inferred:r.inferred}));
 export function canonical(v:unknown):string {if(Array.isArray(v))return `[${v.map(canonical).join(',')}]`;if(v&&typeof v==='object')return `{${Object.entries(v).sort(([a],[b])=>a.localeCompare(b)).map(([k,val])=>`${JSON.stringify(k)}:${canonical(val)}`).join(',')}}`;return JSON.stringify(v);}
@@ -28,7 +29,7 @@ export async function generationApi(req:Request,path:string[],userId:string):Pro
    const rows=await tx.requirement.findMany({where:{projectId:project.id,included:true,deletedAt:null}});
    if(rows.length!==body.requirements.length||rows.some(r=>!body.requirements.some(b=>b.id===r.id&&b.revision===r.revision)))throw new ApiError(409,'VERSION_CONFLICT','Requirements changed. Reload and confirm all included requirements.');
    const items=snapshotItems(rows),hash=snapshotHash(items);let snap=await tx.requirementSnapshot.findUnique({where:{projectId_hash:{projectId:project.id,hash}}});if(!snap)snap=await tx.requirementSnapshot.create({data:{projectId:project.id,hash,items:items as Prisma.InputJsonValue,createdBy:userId}});
-   await tx.requirement.updateMany({where:{id:{in:rows.map(r=>r.id)},status:{not:'confirmed'}},data:{status:'confirmed',version:{increment:1},updatedBy:userId}});await audit(tx,project.id,userId,'requirements_confirmed','RequirementSnapshot',snap.id,undefined,{hash,count:items.length});return snap;});
+   await tx.requirement.updateMany({where:{id:{in:rows.map(r=>r.id)},status:{not:'confirmed'}},data:{status:'confirmed',version:{increment:1},updatedBy:userId}});const impact=await recordSnapshotImpact(tx,project.id,snap.id,userId);await audit(tx,project.id,userId,'requirements_confirmed','RequirementSnapshot',snap.id,undefined,{hash,count:items.length,impact});return snap;});
   return Response.json({snapshot_hash:snapshot.hash,snapshot_id:snapshot.id});
  }
  if(path[2]==='generations'&&req.method==='GET'){
