@@ -1,1 +1,1 @@
-import {EnterprisePage} from '../../components/enterprise-page';export default function Page(){return <EnterprisePage view="profile"/>}
+import {ProfileSecurity} from '../../components/profile-security';export default function Page(){return <ProfileSecurity/>}

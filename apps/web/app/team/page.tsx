@@ -1,1 +1,1 @@
-import {EnterprisePage} from '../../components/enterprise-page';export default function Page(){return <EnterprisePage view="team"/>}
+import {TeamManagement} from '../../components/team-management';export default function Page(){return <TeamManagement/>}

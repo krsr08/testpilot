@@ -1,10 +1,18 @@
 import { db } from './db';
 import { ApiError } from './http';
+import {z} from 'zod';
 
 export async function enterpriseApi(req:Request,path:string[],userId:string):Promise<Response|undefined>{
- if(path[0]!=='enterprise'||req.method!=='GET')return;
+ if(path[0]!=='enterprise')return;
  const membership=await db.membership.findFirst({where:{userId},include:{user:true,workspace:{include:{organization:{include:{integrations:true}},memberships:{include:{user:true}},projects:{select:{id:true,name:true}}}}}});
  if(!membership)throw new ApiError(403,'FORBIDDEN','Workspace access required.');
+ if(path[1]==='members'){
+  if(membership.role!=='ADMIN')throw new ApiError(403,'FORBIDDEN','Only workspace administrators can manage members.');
+  if(req.method==='POST'){const body=z.object({email:z.string().email().transform(v=>v.toLowerCase()),name:z.string().trim().min(2).max(100),role:z.enum(['ADMIN','QA_LEAD','TESTER','VIEWER'])}).strict().parse(await req.json());const result=await db.$transaction(async tx=>{const user=await tx.user.upsert({where:{email:body.email},update:{name:body.name},create:{email:body.email,name:body.name}});const member=await tx.membership.upsert({where:{workspaceId_userId:{workspaceId:membership.workspaceId,userId:user.id}},update:{role:body.role},create:{workspaceId:membership.workspaceId,userId:user.id,role:body.role}});await tx.notification.create({data:{userId:user.id,kind:'WORKSPACE_ACCESS',title:'Workspace access granted',message:`You were added to ${membership.workspace.name} as ${body.role.replace('_',' ').toLowerCase()}.`,href:'/workspace'}});return member;});return Response.json(result,{status:201});}
+  if(req.method==='PATCH'){const body=z.object({userId:z.string().uuid(),role:z.enum(['ADMIN','QA_LEAD','TESTER','VIEWER'])}).strict().parse(await req.json());if(body.userId===userId&&body.role!=='ADMIN')throw new ApiError(409,'SELF_DEMOTION_BLOCKED','Transfer administration before changing your own administrator role.');return Response.json(await db.membership.update({where:{workspaceId_userId:{workspaceId:membership.workspaceId,userId:body.userId}},data:{role:body.role}}));}
+  if(req.method==='DELETE'){const target=z.string().uuid().parse(new URL(req.url).searchParams.get('userId'));if(target===userId)throw new ApiError(409,'SELF_REMOVAL_BLOCKED','Transfer administration before removing your own account.');await db.membership.delete({where:{workspaceId_userId:{workspaceId:membership.workspaceId,userId:target}}});return Response.json({deleted:true});}
+ }
+ if(req.method!=='GET')return;
  const projectIds=membership.workspace.projects.map(project=>project.id);
  const [sources,requirements,testCases,approvedCases,audit]=await Promise.all([
   db.sourceDocument.count({where:{projectId:{in:projectIds},deletedAt:null}}),db.requirement.count({where:{projectId:{in:projectIds},deletedAt:null}}),db.testCase.count({where:{projectId:{in:projectIds},deletedAt:null}}),db.testCase.count({where:{projectId:{in:projectIds},deletedAt:null,status:'approved'}}),db.auditEvent.findMany({where:{projectId:{in:projectIds}},orderBy:{createdAt:'desc'},take:100,include:{project:{select:{name:true}}}})

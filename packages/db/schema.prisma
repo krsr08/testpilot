@@ -8,13 +8,16 @@ datasource db {
 }
 
 model User {
-  id              String       @id @default(uuid()) @db.Uuid
-  email           String       @unique
+  id              String          @id @default(uuid()) @db.Uuid
+  email           String          @unique
   name            String
-  externalSubject String?      @unique
-  updatedAt       DateTime     @updatedAt
-  createdAt       DateTime     @default(now())
+  externalSubject String?         @unique
+  updatedAt       DateTime        @updatedAt
+  createdAt       DateTime        @default(now())
   memberships     Membership[]
+  projectAccess   ProjectMember[]
+  preferences     UserPreference?
+  notifications   Notification[]
 }
 
 model Organization {
@@ -36,6 +39,8 @@ model Workspace {
   memberships    Membership[]
   projects       Project[]
   subscription   WorkspaceSubscription?
+  usageEvents    UsageEvent[]
+  webhookEvents  WebhookEvent[]
   organization   Organization           @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@index([organizationId])
@@ -115,6 +120,12 @@ model Project {
   scenarioCounter     Int                    @default(0)
   caseCounter         Int                    @default(0)
   version             Int                    @default(1)
+  lifecycle           String                 @default("ACTIVE")
+  visibility          String                 @default("PRIVATE")
+  risk                String                 @default("LOW")
+  releaseName         String                 @default("")
+  tags                String[]               @default([])
+  archivedAt          DateTime?
   createdBy           String                 @db.Uuid
   updatedBy           String                 @db.Uuid
   createdAt           DateTime               @default(now())
@@ -133,9 +144,143 @@ model Project {
   feedbackEvents      FeedbackEvent[]
   automationArtifacts AutomationArtifact[]
   changeSets          RequirementChangeSet[]
+  members             ProjectMember[]
+  testPlans           TestPlan[]
+  comments            Comment[]
 
   @@unique([workspaceId, name])
   @@index([createdBy, updatedAt])
+}
+
+model ProjectMember {
+  projectId String   @db.Uuid
+  userId    String   @db.Uuid
+  role      String   @default("CONTRIBUTOR")
+  addedBy   String   @db.Uuid
+  createdAt DateTime @default(now())
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([projectId, userId])
+  @@index([userId, createdAt])
+}
+
+model UserPreference {
+  userId             String   @id @db.Uuid
+  timezone           String   @default("Asia/Calcutta")
+  locale             String   @default("en-IN")
+  dateFormat         String   @default("medium")
+  emailNotifications Boolean  @default(true)
+  inAppNotifications Boolean  @default(true)
+  reducedMotion      Boolean  @default(false)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Notification {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @db.Uuid
+  kind      String
+  title     String
+  message   String
+  href      String    @default("")
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt, createdAt])
+}
+
+model UsageEvent {
+  id             String    @id @default(uuid()) @db.Uuid
+  workspaceId    String    @db.Uuid
+  kind           String
+  quantity       Int       @default(1)
+  idempotencyKey String
+  metadata       Json      @default("{}")
+  createdAt      DateTime  @default(now())
+  workspace      Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, idempotencyKey])
+  @@index([workspaceId, kind, createdAt])
+}
+
+model WebhookEvent {
+  id          String     @id @db.Uuid
+  workspaceId String?    @db.Uuid
+  provider    String
+  eventType   String
+  status      String     @default("processed")
+  payload     Json       @default("{}")
+  createdAt   DateTime   @default(now())
+  workspace   Workspace? @relation(fields: [workspaceId], references: [id], onDelete: SetNull)
+
+  @@index([provider, createdAt])
+}
+
+model TestPlan {
+  id          String      @id @default(uuid()) @db.Uuid
+  projectId   String      @db.Uuid
+  name        String
+  description String      @default("")
+  releaseName String      @default("")
+  status      String      @default("DRAFT")
+  createdBy   String      @db.Uuid
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  project     Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  cycles      TestCycle[]
+
+  @@index([projectId, updatedAt])
+}
+
+model TestCycle {
+  id          String          @id @default(uuid()) @db.Uuid
+  testPlanId  String          @db.Uuid
+  name        String
+  environment String          @default("QA")
+  status      String          @default("PLANNED")
+  startedAt   DateTime?
+  completedAt DateTime?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  testPlan    TestPlan        @relation(fields: [testPlanId], references: [id], onDelete: Cascade)
+  executions  TestExecution[]
+
+  @@index([testPlanId, createdAt])
+}
+
+model TestExecution {
+  id          String    @id @default(uuid()) @db.Uuid
+  testCycleId String    @db.Uuid
+  testCaseId  String    @db.Uuid
+  status      String    @default("NOT_RUN")
+  notes       String    @default("")
+  evidence    Json      @default("[]")
+  executedBy  String?   @db.Uuid
+  executedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  testCycle   TestCycle @relation(fields: [testCycleId], references: [id], onDelete: Cascade)
+  testCase    TestCase  @relation(fields: [testCaseId], references: [id], onDelete: Cascade)
+
+  @@unique([testCycleId, testCaseId])
+  @@index([testCycleId, status])
+}
+
+model Comment {
+  id         String    @id @default(uuid()) @db.Uuid
+  projectId  String    @db.Uuid
+  entityType String
+  entityId   String    @db.Uuid
+  body       String
+  authorId   String    @db.Uuid
+  resolvedAt DateTime?
+  createdAt  DateTime  @default(now())
+  project    Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId, entityType, entityId, createdAt])
 }
 
 model RequirementDocument {
@@ -332,6 +477,7 @@ model TestCase {
   externalLinks       ExternalCaseLink[]
   feedbackEvents      FeedbackEvent[]
   automationArtifacts AutomationArtifact[]
+  testExecutions      TestExecution[]
 
   @@unique([projectId, stableCode])
   @@index([projectId, status, createdAt])

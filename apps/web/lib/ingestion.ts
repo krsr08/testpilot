@@ -6,7 +6,7 @@ import { db } from './db';
 import { ApiError, membership } from './http';
 import { deleteStorage, readStorage, scanUpload, writeSource } from './storage';
 import { saveCaseRevision } from './case-history';
-import {assertDocumentAllowance} from './billing-api';
+import {assertDocumentAllowance,recordDocumentUsage} from './billing-api';
 
 const json = (v: unknown) => JSON.parse(JSON.stringify(v)) as Prisma.InputJsonValue;
 export async function audit(tx: Prisma.TransactionClient, projectId:string, actorId:string, action:string, entityType:string, entityId:string, before?:unknown, after?:unknown) {
@@ -21,7 +21,7 @@ export async function ingestTextSource(projectId:string,userId:string,text:strin
  const clean=z.string().trim().min(1).max(100000).parse(text),safeName=basename(filename).split('').filter(character=>character.charCodeAt(0)>=32).join('').slice(0,180)||'Authored requirements.txt',bytes=Buffer.from(clean,'utf8');
  try{await scanUpload(bytes);}catch(error){throw new ApiError(422,'MALWARE_SCAN_FAILED',error instanceof Error?error.message:'Document failed malware scanning.');}
  const storageKey=await writeSource(bytes,'txt','text/plain');
- try{return await db.$transaction(async tx=>{const source=await tx.sourceDocument.create({data:{projectId,filename:safeName.endsWith('.txt')?safeName:`${safeName}.txt`,mime:'text/plain',size:bytes.length,sha256:createHash('sha256').update(bytes).digest('hex'),storageKey,createdBy:userId,updatedBy:userId}});const job=await createJob(tx,projectId,userId,'extract_source',source.id);await audit(tx,projectId,userId,'source_uploaded','SourceDocument',source.id,undefined,{filename:source.filename,size:bytes.length,origin:'authoring'});return {source,job_id:job.id};});}catch(error){await deleteStorage(storageKey).catch(()=>{});throw error;}
+ const sha256=createHash('sha256').update(bytes).digest('hex');try{return await db.$transaction(async tx=>{await recordDocumentUsage(tx,projectId,`document:${projectId}:${sha256}`,{filename:safeName,size:bytes.length});const source=await tx.sourceDocument.create({data:{projectId,filename:safeName.endsWith('.txt')?safeName:`${safeName}.txt`,mime:'text/plain',size:bytes.length,sha256,storageKey,createdBy:userId,updatedBy:userId}});const job=await createJob(tx,projectId,userId,'extract_source',source.id);await audit(tx,projectId,userId,'source_uploaded','SourceDocument',source.id,undefined,{filename:source.filename,size:bytes.length,origin:'authoring'});return {source,job_id:job.id};});}catch(error){await deleteStorage(storageKey).catch(()=>{});throw error;}
 }
 export function pageArgs(url:URL){const limit=z.coerce.number().int().min(1).max(100).default(50).parse(url.searchParams.get('limit')??undefined);const cursor=url.searchParams.get('cursor');if(cursor)z.uuid().parse(cursor);return {take:limit+1,...(cursor?{cursor:{id:cursor},skip:1}:{}),orderBy:{id:'asc' as const}};}
 export function pageResult<T extends {id:string}>(rows:T[],take:number,key:string){const more=rows.length===take;if(more)rows.pop();return {[key]:rows,next_cursor:more?rows.at(-1)?.id:null};}
@@ -84,7 +84,7 @@ export async function ingestion(req:Request,path:string[],userId:string):Promise
   }else{const body=z.object({text:z.string().trim().min(1).max(50000),filename:z.string().max(180).optional()}).strict().parse(await req.json());return Response.json(await ingestTextSource(project.id,userId,body.text,body.filename||'Pasted user story.txt'),{status:202});}
   try{await scanUpload(bytes);}catch(error){throw new ApiError(422,'MALWARE_SCAN_FAILED',error instanceof Error?error.message:'Upload failed malware scanning.');}
   const storageKey=await writeSource(bytes,extension.slice(1),mime);
-  try{const result=await db.$transaction(async tx=>{const source=await tx.sourceDocument.create({data:{projectId:project.id,filename,mime,size:bytes.length,sha256:createHash('sha256').update(bytes).digest('hex'),storageKey,createdBy:userId,updatedBy:userId}});const job=await createJob(tx,project.id,userId,'extract_source',source.id);await audit(tx,project.id,userId,'source_uploaded','SourceDocument',source.id,undefined,{filename,size:bytes.length});return {source,job_id:job.id};});return Response.json(result,{status:202});}catch(e){await deleteStorage(storageKey).catch(()=>{});throw e;}
+  const sha256=createHash('sha256').update(bytes).digest('hex');try{const result=await db.$transaction(async tx=>{await recordDocumentUsage(tx,project.id,`document:${project.id}:${sha256}`,{filename,size:bytes.length});const source=await tx.sourceDocument.create({data:{projectId:project.id,filename,mime,size:bytes.length,sha256,storageKey,createdBy:userId,updatedBy:userId}});const job=await createJob(tx,project.id,userId,'extract_source',source.id);await audit(tx,project.id,userId,'source_uploaded','SourceDocument',source.id,undefined,{filename,size:bytes.length});return {source,job_id:job.id};});return Response.json(result,{status:202});}catch(e){await deleteStorage(storageKey).catch(()=>{});throw e;}
  }
  if(path[2]==='requirements'&&path.length===3&&req.method==='GET'){
   const args=pageArgs(url);const rows=await db.requirement.findMany({...args,where:{projectId:project.id,deletedAt:null,...(url.searchParams.get('status')?{status:url.searchParams.get('status')!}:{})},include:{source:true}});return Response.json(pageResult(rows,args.take,'requirements'));

@@ -67,3 +67,14 @@ Generation allows at most 100 snapshot requirements and 500 cases; provider requ
 - `POST /api/webhooks/stripe` accepts signature-verified Stripe lifecycle events. It is intentionally outside the authenticated application router and trusts only Stripe signatures.
 
 The free plan allows three new source documents per workspace per UTC calendar month. The seeded local workspace uses a Pro sandbox subscription so demos and automated tests remain deterministic. Configure `STRIPE_SECRET_KEY`, `STRIPE_PRICE_ID`, and `STRIPE_WEBHOOK_SECRET` to activate Checkout; credentials are never sent to the browser.
+
+## Enterprise portfolio, governance, and execution APIs
+
+- `GET /projects?search=login&type=APPLICATION&status=review-ready&scope=mine&sort=name-asc&limit=24&page=1` returns a stable page plus `total` and `total_pages`. Scope values are `mine`, `shared`, and `workspace`.
+- `PATCH /projects/{id}` updates project metadata, lifecycle, visibility, risk, release and tags with optimistic `version` concurrency. `DELETE /projects/{id}` performs a reversible archive.
+- `GET|POST|DELETE /projects/{id}/members` manages explicit project access for workspace members.
+- `GET|POST /projects/{id}/test-plans`, `POST /test-plans/{id}/cycles`, and `PATCH /test-executions/{id}` manage release execution evidence.
+- `GET /search?q=...` searches accessible projects, requirements and test cases.
+- `GET|PATCH /notifications` reads and acknowledges the current user's activity inbox.
+- `GET|PATCH /profile/preferences` manages locale, timezone, notifications and reduced-motion preferences.
+- `GET /projects/{id}/operations` reports recent jobs, generations and exports.

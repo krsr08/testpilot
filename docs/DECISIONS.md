@@ -71,3 +71,15 @@ Requirement snapshot confirmation now persists an ADDED/MODIFIED/DELETED/UNCHANG
 Playwright artifacts are generated only from approved, non-stale cases. Ranked locator candidates are embedded in the generated source. Runtime fallbacks are reported as repair suggestions, and changing the artifact requires an explicit approve action. The product creates a governed suggested source revision rather than writing to a Git provider directly; repository PR creation remains an optional deployment integration.
 
 Stripe is the sole payment authority. TestPilot stores subscription identifiers and status, verifies webhook signatures, and never handles card data. Free usage is measured from persisted source documents. The local seeded workspace is Pro to keep test fixtures independent of calendar usage.
+
+## Enterprise portfolio and execution foundation — 2026-09-27
+
+Project lists are paged at the server and status counts are aggregated in one grouped query. The UI no longer downloads the complete portfolio. Access supports owner-only projects, explicitly shared projects, and workspace-visible projects. Project lifecycle, risk, release, tags, archive state, and optimistic concurrency are durable fields. Project deletion is implemented as reversible archival so audit and traceability evidence remain intact.
+
+Approved cases can be organized into test plans and environment-specific cycles, with accountable pass, fail, blocked, skipped, and not-run results. This is the first durable execution layer; evidence file upload, defect-provider linkage, scheduled runs, and CI runner orchestration remain later integrations.
+
+Document-plan usage is recorded in an immutable idempotent ledger under a PostgreSQL advisory lock. This prevents concurrent uploads from bypassing a workspace limit and prevents deletion from reducing consumed usage. Stripe webhook event IDs are retained to reject replayed deliveries.
+
+The browser receives CSP, frame, MIME, referrer, permissions, and cross-origin isolation headers. API throttling uses Redis and fails closed in production if the limiter is unavailable. Local deterministic demo mode receives a larger limit so repeatable integration suites can run without weakening deployed limits.
+
+Workspace member provisioning creates an application identity record but does not send invitations or credentials. Production authentication remains authoritative in the configured OIDC/SAML identity provider. SCIM, access-review campaigns, device session controls, legal hold, customer-managed encryption keys, and database RLS are deliberately not represented as completed controls.
