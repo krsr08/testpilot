@@ -19,6 +19,14 @@ Base URL: `http://localhost:3000/api/v1`. JSON is used except multipart original
 - `GET /projects?search=login&type=APPLICATION&status=review-ready&sort=name-asc&limit=50&cursor=<UUID>` returns only the authenticated user's `projects` and `next_cursor`. Portfolio status filters are `all`, `in-progress`, and `review-ready`; sort values are `updated-desc`, `updated-asc`, `name-asc`, and `name-desc`. Requirements and cases use the same cursor convention, with keys `requirements` and `cases` respectively. Stop at a null cursor. Requirements support `status`; cases support `status`, `type`, and `requirement_id`.
 
 `POST /document-builder` accepts a product brief with `title`, `projectType`, `overview`, and arrays for `users`, `capabilities`, `businessRules`, `constraints`, and `acceptanceCriteria`. It returns a structured Markdown product requirements document. The fixture generator is deterministic by default; external generation uses the configured OpenAI-compatible adapter. The browser can download the document or create a project and submit it directly to the normal extraction pipeline.
+
+## Requirement authoring
+
+- `POST /projects/{id}/authoring-documents` creates a persistent document from `SIMPLE_PRD`, `BRD`, `SRS`, `AGILE_STORIES`, `API_REQUIREMENTS`, `DATA_MIGRATION`, or `BLANK`.
+- `GET /projects/{id}/authoring-documents` lists authored documents; `GET /authoring-documents/{id}` includes recent immutable revision metadata.
+- `PATCH /authoring-documents/{id}` autosaves `title`, `content`, and the expected `version`. Stale versions return `409 VERSION_CONFLICT`; each successful save creates a revision.
+- `GET /authoring-documents/{id}/download?format=docx|md` returns a private generated document with download and no-store headers.
+- `POST /authoring-documents/{id}/process` registers the saved version as a source and queues normal source-grounded extraction. The same saved version cannot be submitted twice; editing and saving returns it to draft status.
 - `GET /projects/{id}` returns actual counts, active sources and recent audit events.
 - `GET /sources/{id}/download` returns a private original attachment. `DELETE /sources/{id}` soft-deletes it and derived requirements before generation; active extraction and existing generation runs prevent deletion.
 - `POST /requirements/{id}/split` accepts `{"version":1,"texts":["First clause","Second clause"]}` and returns HTTP 201 with `requirements`. The original becomes excluded; children retain its evidence.

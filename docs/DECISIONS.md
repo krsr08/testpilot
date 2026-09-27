@@ -6,7 +6,13 @@ The Projects portfolio is scoped to the authenticated creator in both list and d
 
 Projects now carry a controlled type and expose source, requirement, test-case, approved, and draft counts. Search, type, progress, sorting, tile view, and list view are first-class portfolio controls; the selected view is stored in the browser.
 
-Users without a BRD, PRD, or SRS can provide a short brief. The document builder produces an editable Markdown PRD that can be downloaded or submitted as a source into the existing extraction pipeline. Fixture mode is deterministic and requires no model key. External mode reuses the OpenAI-compatible adapter and still returns a reviewable document before ingestion. Markdown was chosen because it is portable, diffable, and already supported by the text extraction path; richer DOCX export remains a future enhancement.
+Users without a BRD, PRD, or SRS can provide a short brief. The document builder produces editable Markdown that can be downloaded as Markdown or DOCX, or submitted as a source into the existing extraction pipeline. Fixture mode is deterministic and requires no model key. External mode reuses the OpenAI-compatible adapter and still returns a reviewable document before ingestion. Markdown remains the canonical authoring format because it is portable, diffable, and already supported by the text extraction path.
+
+## Versioned authoring before desktop synchronization — 2026-09-27
+
+New projects now lead users to upload a source or author one from a governed template. Authored documents are project-owned, versioned with optimistic concurrency, downloadable as Markdown or DOCX, and submitted through the same validated extraction pipeline as uploads. Editing a submitted document creates a new draft version before another extraction can be requested.
+
+Custom WebDAV and automatic desktop Word synchronization were deliberately deferred. A correct implementation requires public HTTPS, complete lock and conflict semantics, expiring credentials, Office compatibility testing, and production storage controls. Download, local Word editing, and validated re-upload provide the useful workflow without claiming real-time synchronization. A later enterprise integration should prefer SharePoint Embedded or WOPI over a minimal custom WebDAV server.
 
 2026-09-26 — Preserve the blueprint stack. Next.js App Router, Prisma 6, PostgreSQL 17, Redis 7 and BullMQ. Local infrastructure binds only loopback. Node executes queue orchestration; Python handles extraction and workbook production. Milestone gates are recorded in GATES.md. No production authentication is claimed.
 

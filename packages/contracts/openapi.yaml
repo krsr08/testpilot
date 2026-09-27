@@ -1741,34 +1741,19 @@
                     "type": "string"
                   },
                   "users": {
-                    "items": {
-                      "type": "string"
-                    },
-                    "type": "array"
+                    "type": "string"
                   },
                   "capabilities": {
-                    "items": {
-                      "type": "string"
-                    },
-                    "type": "array"
+                    "type": "string"
                   },
                   "businessRules": {
-                    "items": {
-                      "type": "string"
-                    },
-                    "type": "array"
+                    "type": "string"
                   },
                   "constraints": {
-                    "items": {
-                      "type": "string"
-                    },
-                    "type": "array"
+                    "type": "string"
                   },
                   "acceptanceCriteria": {
-                    "items": {
-                      "type": "string"
-                    },
-                    "type": "array"
+                    "type": "string"
                   }
                 }
               }
@@ -1780,6 +1765,38 @@
             "description": "Structured Markdown document"
           }
         }
+      }
+    },
+    "/projects/{id}/authoring-documents": {
+      "get": {
+        "summary": "List project requirements documents",
+        "responses": {"200": {"description": "Authored documents"}}
+      },
+      "post": {
+        "summary": "Create a requirements document from a template",
+        "responses": {"201": {"description": "Created document"}}
+      }
+    },
+    "/authoring-documents/{id}": {
+      "get": {
+        "summary": "Get an authored document and revision history",
+        "responses": {"200": {"description": "Authored document"}}
+      },
+      "patch": {
+        "summary": "Save a new optimistic-concurrency document revision",
+        "responses": {"200": {"description": "Saved revision"}, "409": {"description": "Version conflict"}}
+      }
+    },
+    "/authoring-documents/{id}/download": {
+      "get": {
+        "summary": "Download an authored document as DOCX or Markdown",
+        "responses": {"200": {"description": "Private document download"}}
+      }
+    },
+    "/authoring-documents/{id}/process": {
+      "post": {
+        "summary": "Submit the saved document version for requirement extraction",
+        "responses": {"202": {"description": "Extraction queued"}, "409": {"description": "Version already submitted"}}
       }
     }
   },
@@ -1826,6 +1843,10 @@
           "domain": {
             "type": "string",
             "maxLength": 120
+          },
+          "type": {
+            "type": "string",
+            "enum": ["APPLICATION", "API", "MOBILE", "DATA", "INTEGRATION", "MIGRATION", "OTHER"]
           }
         }
       },
