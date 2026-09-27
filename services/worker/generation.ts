@@ -46,9 +46,12 @@ export async function generateCases(jobId: string) {
       } });
       let scenarioNumber = project.scenarioCounter - validated.scenarios.length + 1;
       let caseNumber = project.caseCounter - caseCount + 1;
+      const approvedStories = await tx.userStory.findMany({ where: { projectId: run.projectId, state: 'APPROVED' }, include: { requirementLinks: true } });
       for (const candidate of validated.scenarios) {
+        const scenarioRequirementIds = new Set(candidate.cases.flatMap(item => item.requirementIds));
+        const linkedStory = approvedStories.find(item => item.requirementLinks.some(link => scenarioRequirementIds.has(link.requirementId)));
         const scenario = await tx.scenario.create({ data: {
-          projectId: run.projectId, runId: run.id, stableCode: `SCN-${String(scenarioNumber++).padStart(3, '0')}`,
+          projectId: run.projectId, runId: run.id, storyId: linkedStory?.id, stableCode: `SCN-${String(scenarioNumber++).padStart(3, '0')}`,
           title: candidate.title, description: candidate.description, createdBy: job.createdBy, updatedBy: job.createdBy,
         } });
         for (const candidateCase of candidate.cases) {

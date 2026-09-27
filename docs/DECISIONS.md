@@ -83,3 +83,9 @@ Document-plan usage is recorded in an immutable idempotent ledger under a Postgr
 The browser receives CSP, frame, MIME, referrer, permissions, and cross-origin isolation headers. API throttling uses Redis and fails closed in production if the limiter is unavailable. Local deterministic demo mode receives a larger limit so repeatable integration suites can run without weakening deployed limits.
 
 Workspace member provisioning creates an application identity record but does not send invitations or credentials. Production authentication remains authoritative in the configured OIDC/SAML identity provider. SCIM, access-review campaigns, device session controls, legal hold, customer-managed encryption keys, and database RLS are deliberately not represented as completed controls.
+
+## User story governance backbone — 2026-09-27
+
+The v2 product plan makes User Story a durable artifact between Requirement and Scenario. Stories use a database-enforced review state machine, immutable revision entries, AI or human author attribution, source-span evidence, many-to-many requirement links, reviewer reasons, and parent-child lineage. Grounded generation only operates on confirmed included requirements and refuses unlinked manual stories. A reverse coverage query identifies requirements without stories.
+
+Approved story edits re-enter review. Split and clone children inherit requirement links; splitting archives the parent and flags linked scenarios and test cases for review. Self-approval is blocked in deployed environments unless `ALLOW_SELF_APPROVAL=true`; deterministic demo mode remains usable by one seeded administrator. Scenario persistence now records an approved story when a generated scenario shares one of its requirement links.

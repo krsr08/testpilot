@@ -1,0 +1,1 @@
+import {TraceabilityGraph} from '../../../../../components/traceability-graph';export default async function Page({params}:{params:Promise<{id:string}>}){return <TraceabilityGraph id={(await params).id}/>}

@@ -13,6 +13,7 @@ import { intelligenceApi } from '../../../../lib/intelligence-api';
 import { billingApi } from '../../../../lib/billing-api';
 import { governanceApi } from '../../../../lib/governance-api';
 import { enforceRateLimit } from '../../../../lib/rate-limit';
+import { storyApi } from '../../../../lib/story-api';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 async function handle(req: Request, context: {params:Promise<{path:string[]}>}) {
@@ -22,6 +23,7 @@ async function handle(req: Request, context: {params:Promise<{path:string[]}>}) 
   const enterprise=await enterpriseApi(req,path,user.id);if(enterprise)return enterprise;
   const billing=await billingApi(req,path,user.id);if(billing)return billing;
   const governed=await governanceApi(req,path,user.id);if(governed)return governed;
+  const stories=await storyApi(req,path,user.id);if(stories)return stories;
   if(path[0]==='document-builder'&&path.length===1&&req.method==='POST')return Response.json(await buildDocument(await req.json()));
   const authored=await authoringApi(req,path,user.id);if(authored)return authored;
   const intelligent=await intelligenceApi(req,path,user.id);if(intelligent)return intelligent;
@@ -43,7 +45,7 @@ async function handle(req: Request, context: {params:Promise<{path:string[]}>}) 
    const limit=z.coerce.number().int().min(1).max(100).default(24).parse(url.searchParams.get('limit')??undefined);const page=z.coerce.number().int().min(1).default(1).parse(url.searchParams.get('page')??undefined);const type=url.searchParams.get('type');if(type&&type!=='all')z.enum(['APPLICATION','API','MOBILE','DATA','INTEGRATION','MIGRATION','OTHER']).parse(type);const status=z.enum(['all','empty','in-progress','review-ready','ACTIVE','ON_HOLD','COMPLETED','ARCHIVED']).default('all').parse(url.searchParams.get('status')||'all');const scope=z.enum(['mine','shared','workspace']).default('mine').parse(url.searchParams.get('scope')||'mine');const sort=z.enum(['updated-desc','updated-asc','name-asc','name-desc']).default('updated-desc').parse(url.searchParams.get('sort')||'updated-desc');const orderBy=sort==='name-asc'?[{name:'asc' as const},{id:'asc' as const}]:sort==='name-desc'?[{name:'desc' as const},{id:'desc' as const}]:sort==='updated-asc'?[{updatedAt:'asc' as const},{id:'asc' as const}]:[{updatedAt:'desc' as const},{id:'desc' as const}];
    const query=url.searchParams.get('search')||'';const progressFilter=status==='empty'?{sources:{none:{}},requirements:{none:{}},testCases:{none:{}}}:status==='review-ready'?{testCases:{some:{status:'approved'}}}:status==='in-progress'?{OR:[{sources:{some:{}}},{requirements:{some:{}}},{testCases:{some:{}}}]}:status!=='all'?{lifecycle:status}:{};const accessFilter=scope==='mine'?{createdBy:user.id}:scope==='shared'?{members:{some:{userId:user.id}}}:{OR:[{createdBy:user.id},{visibility:'WORKSPACE'},{members:{some:{userId:user.id}}}]};
    const where={workspaceId:member.workspaceId,...accessFilter,...(type&&type!=='all'?{type}:{}),AND:[{OR:[{name:{contains:query,mode:'insensitive' as const}},{description:{contains:query,mode:'insensitive' as const}},{domain:{contains:query,mode:'insensitive' as const}}]},progressFilter]};
-   const [total,projects]=await Promise.all([db.project.count({where}),db.project.findMany({where,take:limit,skip:(page-1)*limit,orderBy,include:{_count:{select:{sources:{where:{deletedAt:null}},requirements:{where:{deletedAt:null}},testCases:{where:{deletedAt:null}}}}}})]);
+   const [total,projects]=await Promise.all([db.project.count({where}),db.project.findMany({where,take:limit,skip:(page-1)*limit,orderBy,include:{_count:{select:{sources:{where:{deletedAt:null}},requirements:{where:{deletedAt:null}},testCases:{where:{deletedAt:null}},userStories:true}}}})]);
    const ids=projects.map(p=>p.id),grouped=ids.length?await db.testCase.groupBy({by:['projectId','status'],where:{projectId:{in:ids},deletedAt:null,status:{in:['approved','draft']}},_count:{_all:true}}):[];const countMap=new Map(grouped.map(row=>[`${row.projectId}:${row.status}`,row._count._all]));
    return Response.json({projects:projects.map(p=>({...p,approvedCount:countMap.get(`${p.id}:approved`)||0,draftCount:countMap.get(`${p.id}:draft`)||0})),page,page_size:limit,total,total_pages:Math.ceil(total/limit)});
   }
@@ -57,7 +59,7 @@ async function handle(req: Request, context: {params:Promise<{path:string[]}>}) 
   }
   if(path[0]==='projects'&&path.length===2&&req.method==='GET') {
    z.uuid().parse(path[1]);await membership(path[1],user.id);
-   const project=await db.project.findUniqueOrThrow({where:{id:path[1]},include:{_count:{select:{sources:{where:{deletedAt:null}},requirements:{where:{deletedAt:null}},testCases:{where:{deletedAt:null}}}},sources:{where:{deletedAt:null},orderBy:{createdAt:'desc'}},auditEvents:{take:15,orderBy:{createdAt:'desc'}}}});
+   const project=await db.project.findUniqueOrThrow({where:{id:path[1]},include:{_count:{select:{sources:{where:{deletedAt:null}},requirements:{where:{deletedAt:null}},testCases:{where:{deletedAt:null}},userStories:true}},sources:{where:{deletedAt:null},orderBy:{createdAt:'desc'}},auditEvents:{take:15,orderBy:{createdAt:'desc'}}}});
    const [approvedCount,draftCount,confirmedRequirements,exports]=await Promise.all([db.testCase.count({where:{projectId:project.id,deletedAt:null,status:'approved'}}),db.testCase.count({where:{projectId:project.id,deletedAt:null,status:'draft'}}),db.requirement.count({where:{projectId:project.id,deletedAt:null,included:true,status:'confirmed'}}),db.export.count({where:{projectId:project.id,status:'succeeded'}})]);
    return Response.json({...project,counts:{...project._count,approvedCount,draftCount,confirmedRequirements,exports}});
   }

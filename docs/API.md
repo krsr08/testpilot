@@ -78,3 +78,13 @@ The free plan allows three new source documents per workspace per UTC calendar m
 - `GET|PATCH /notifications` reads and acknowledges the current user's activity inbox.
 - `GET|PATCH /profile/preferences` manages locale, timezone, notifications and reduced-motion preferences.
 - `GET /projects/{id}/operations` reports recent jobs, generations and exports.
+
+## Grounded user-story workflow
+
+- `GET /projects/{id}/stories` returns stories with requirement evidence, revisions, downstream scenarios, external links, and reverse-coverage gaps.
+- `POST /projects/{id}/stories/generate` creates deterministic, source-span-grounded stories for confirmed requirements that do not yet have a story.
+- `POST /projects/{id}/stories` creates a manual story and requires one or more included requirement IDs.
+- `PATCH /stories/{id}` edits with optimistic concurrency and returns approved material changes to review.
+- `POST /stories/{id}/transition` applies submit, approve, reject, revise, and archive state transitions. Reject and archive require reasons. Production self-approval is blocked unless explicitly relaxed.
+- `POST /stories/{id}/clone` preserves requirement links and lineage. `POST /stories/{id}/split` creates linked draft children, archives the parent, and flags downstream scenarios and cases for review.
+- `GET /review-queue` returns workspace-accessible stories needing attention with aging metrics.
