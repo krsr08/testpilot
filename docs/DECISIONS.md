@@ -1,5 +1,13 @@
 # Implementation decisions
 
+## Creator-private project portfolios and requirements document builder — 2026-09-27
+
+The Projects portfolio is scoped to the authenticated creator in both list and direct-access authorization. Workspace membership remains necessary, but does not reveal another member's projects. This deliberately favors the requested personal-project model over workspace-wide collaboration; future sharing must be an explicit grant rather than an implicit consequence of membership.
+
+Projects now carry a controlled type and expose source, requirement, test-case, approved, and draft counts. Search, type, progress, sorting, tile view, and list view are first-class portfolio controls; the selected view is stored in the browser.
+
+Users without a BRD, PRD, or SRS can provide a short brief. The document builder produces an editable Markdown PRD that can be downloaded or submitted as a source into the existing extraction pipeline. Fixture mode is deterministic and requires no model key. External mode reuses the OpenAI-compatible adapter and still returns a reviewable document before ingestion. Markdown was chosen because it is portable, diffable, and already supported by the text extraction path; richer DOCX export remains a future enhancement.
+
 2026-09-26 — Preserve the blueprint stack. Next.js App Router, Prisma 6, PostgreSQL 17, Redis 7 and BullMQ. Local infrastructure binds only loopback. Node executes queue orchestration; Python handles extraction and workbook production. Milestone gates are recorded in GATES.md. No production authentication is claimed.
 
 ## Local runtime boundary — 2026-09-26

@@ -77,6 +77,47 @@
               "minimum": 1,
               "maximum": 100
             }
+          },
+          {
+            "in": "query",
+            "schema": {
+              "enum": [
+                "APPLICATION",
+                "API",
+                "MOBILE",
+                "DATA",
+                "INTEGRATION",
+                "MIGRATION",
+                "OTHER"
+              ],
+              "type": "string"
+            },
+            "name": "type"
+          },
+          {
+            "in": "query",
+            "schema": {
+              "enum": [
+                "all",
+                "in-progress",
+                "review-ready"
+              ],
+              "type": "string"
+            },
+            "name": "status"
+          },
+          {
+            "in": "query",
+            "schema": {
+              "enum": [
+                "updated-desc",
+                "updated-asc",
+                "name-asc",
+                "name-desc"
+              ],
+              "type": "string"
+            },
+            "name": "sort"
           }
         ]
       },
@@ -1662,6 +1703,81 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/document-builder": {
+      "post": {
+        "summary": "Generate a structured requirements document from a product brief",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "title",
+                  "projectType",
+                  "overview"
+                ],
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  },
+                  "projectType": {
+                    "enum": [
+                      "APPLICATION",
+                      "API",
+                      "MOBILE",
+                      "DATA",
+                      "INTEGRATION",
+                      "MIGRATION",
+                      "OTHER"
+                    ],
+                    "type": "string"
+                  },
+                  "overview": {
+                    "type": "string"
+                  },
+                  "users": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "capabilities": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "businessRules": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "constraints": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "acceptanceCriteria": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Structured Markdown document"
           }
         }
       }

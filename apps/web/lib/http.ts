@@ -34,7 +34,7 @@ export async function actor(req: Request) {
   return user.externalSubject?user:db.user.update({where:{id:user.id},data:{externalSubject:subject,name}});
 }
 export async function membership(projectId: string,userId: string,roles?:Array<'ADMIN'|'QA_LEAD'|'TESTER'|'VIEWER'>) {
-  const project=await db.project.findFirst({where:{id:projectId,workspace:{memberships:{some:{userId,...(roles?{role:{in:roles}}:{})}}}}});
+  const project=await db.project.findFirst({where:{id:projectId,createdBy:userId,workspace:{memberships:{some:{userId,...(roles?{role:{in:roles}}:{})}}}}});
   if(!project) throw new ApiError(404,'NOT_FOUND','Project not found.');
   return project;
 }

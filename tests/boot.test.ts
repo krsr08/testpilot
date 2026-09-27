@@ -11,7 +11,7 @@ describe('Milestone 0: local boot', () => {
   });
 
   it('returns the persistent seeded project through the authenticated demo API', async () => {
-    const response = await fetch(`${baseUrl}/api/v1/projects?limit=100`);
+    const response = await fetch(`${baseUrl}/api/v1/projects?search=${encodeURIComponent('Login & Password Reset')}&limit=100`);
     expect(response.status).toBe(200);
     const body = await response.json();
     expect(body.projects).toEqual(expect.any(Array));

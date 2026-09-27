@@ -6,7 +6,7 @@ Base URL: `http://localhost:3000/api/v1`. JSON is used except multipart original
 
 ## Core sequence
 
-1. `POST /projects` with `{"name":"Customer portal","description":"Login coverage","domain":"Account security"}` returns the project object, HTTP 201.
+1. `POST /projects` with `{"name":"Customer portal","description":"Login coverage","domain":"Account security","type":"APPLICATION"}` returns the project object, HTTP 201. Supported types are `APPLICATION`, `API`, `MOBILE`, `DATA`, `INTEGRATION`, `MIGRATION`, and `OTHER`. Projects are private to their creator: listing and direct project routes require `createdBy` to match the authenticated user.
 2. `POST /projects/{id}/sources` accepts either multipart field `file` or JSON `{"text":"1. Users must sign in with valid credentials."}`. Response is HTTP 202, `{"source":{...},"job_id":"..."}`. PDF/DOCX/TXT originals must be nonempty and at most 10 MiB; MIME and extension must match. Pasted stories are capped at 50,000 characters.
 3. Poll `GET /jobs/{job_id}` until `status` is `succeeded` or `failed`. Jobs expose `stage`, `progress`, and sanitized `error`; queueing is asynchronous and durable. `POST /jobs/{job_id}/retry` retains the job ID. Scanned PDFs finish with source warnings and no invented text.
 4. Read `GET /projects/{id}/requirements?limit=100`. Records use camelCase: `stableCode`, `sourceLocator`, `excerpt`, `revision`, `version`. Edit with `PATCH /requirements/{id}` and `{"text":"Reviewed requirement","included":true,"version":1}`. Use the latest returned version for subsequent edits.
@@ -16,7 +16,9 @@ Base URL: `http://localhost:3000/api/v1`. JSON is used except multipart original
 
 ## Supporting operations
 
-- `GET /projects?search=login&limit=50&cursor=<UUID>` returns `projects` and `next_cursor`. Requirements and cases use the same cursor convention, with keys `requirements` and `cases` respectively. Stop at a null cursor. Requirements support `status`; cases support `status`, `type`, and `requirement_id`.
+- `GET /projects?search=login&type=APPLICATION&status=review-ready&sort=name-asc&limit=50&cursor=<UUID>` returns only the authenticated user's `projects` and `next_cursor`. Portfolio status filters are `all`, `in-progress`, and `review-ready`; sort values are `updated-desc`, `updated-asc`, `name-asc`, and `name-desc`. Requirements and cases use the same cursor convention, with keys `requirements` and `cases` respectively. Stop at a null cursor. Requirements support `status`; cases support `status`, `type`, and `requirement_id`.
+
+`POST /document-builder` accepts a product brief with `title`, `projectType`, `overview`, and arrays for `users`, `capabilities`, `businessRules`, `constraints`, and `acceptanceCriteria`. It returns a structured Markdown product requirements document. The fixture generator is deterministic by default; external generation uses the configured OpenAI-compatible adapter. The browser can download the document or create a project and submit it directly to the normal extraction pipeline.
 - `GET /projects/{id}` returns actual counts, active sources and recent audit events.
 - `GET /sources/{id}/download` returns a private original attachment. `DELETE /sources/{id}` soft-deletes it and derived requirements before generation; active extraction and existing generation runs prevent deletion.
 - `POST /requirements/{id}/split` accepts `{"version":1,"texts":["First clause","Second clause"]}` and returns HTTP 201 with `requirements`. The original becomes excluded; children retain its evidence.
