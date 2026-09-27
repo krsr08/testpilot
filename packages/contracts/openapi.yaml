@@ -1743,10 +1743,22 @@
                   "users": {
                     "type": "string"
                   },
+                  "inScope": {
+                    "type": "string"
+                  },
+                  "outOfScope": {
+                    "type": "string"
+                  },
                   "capabilities": {
                     "type": "string"
                   },
                   "businessRules": {
+                    "type": "string"
+                  },
+                  "integrations": {
+                    "type": "string"
+                  },
+                  "assumptionsRisks": {
                     "type": "string"
                   },
                   "constraints": {

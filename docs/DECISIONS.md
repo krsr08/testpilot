@@ -14,6 +14,10 @@ New projects now lead users to upload a source or author one from a governed tem
 
 Custom WebDAV and automatic desktop Word synchronization were deliberately deferred. A correct implementation requires public HTTPS, complete lock and conflict semantics, expiring credentials, Office compatibility testing, and production storage controls. Download, local Word editing, and validated re-upload provide the useful workflow without claiming real-time synchronization. A later enterprise integration should prefer SharePoint Embedded or WOPI over a minimal custom WebDAV server.
 
+## Enterprise BA brief fields and local recovery — 2026-09-27
+
+AI briefs capture explicit in-scope and out-of-scope boundaries, integrations and system dependencies, and assumptions and risks. Missing values remain visibly marked for human review rather than being invented. Draft form values autosave in the current browser and can also be saved explicitly; once a project document exists, PostgreSQL revisions remain the authoritative durable history. Browser-local drafts contain product text, so production data-retention guidance must include clearing site data on shared devices.
+
 2026-09-26 — Preserve the blueprint stack. Next.js App Router, Prisma 6, PostgreSQL 17, Redis 7 and BullMQ. Local infrastructure binds only loopback. Node executes queue orchestration; Python handles extraction and workbook production. Milestone gates are recorded in GATES.md. No production authentication is claimed.
 
 ## Local runtime boundary — 2026-09-26

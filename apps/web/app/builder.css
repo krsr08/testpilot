@@ -1,0 +1,4 @@
+.document-builder{max-height:min(92vh,960px)}
+.document-builder>form{max-height:calc(92vh - 40px);overflow-y:auto;padding-right:4px}
+.builder-save-status{min-height:20px;margin-top:8px;color:#667b96;font:12px ui-monospace,SFMono-Regular,Consolas,monospace}
+.document-builder .modal-actions{position:sticky;bottom:0;background:#fff;border-top:1px solid #e5eaf1;padding-top:14px;margin-top:10px;z-index:2}
