@@ -18,6 +18,12 @@ Custom WebDAV and automatic desktop Word synchronization were deliberately defer
 
 AI briefs capture explicit in-scope and out-of-scope boundaries, integrations and system dependencies, and assumptions and risks. Missing values remain visibly marked for human review rather than being invented. Draft form values autosave in the current browser and can also be saved explicitly; once a project document exists, PostgreSQL revisions remain the authoritative durable history. Browser-local drafts contain product text, so production data-retention guidance must include clearing site data on shared devices.
 
+## Phase 0–1 self-healing analysis boundary — 2026-09-27
+
+The attached build plan is retained in `docs/BOOTSTRAPPED_BUILD_PLAN.md`. Its proposed root-level `pages`, `lib`, and `components` paths were adapted to the existing Next.js App Router workspace under `apps/web`. The authenticated endpoint is `/api/generate-prd`; existing `/api/v1` product contracts remain available.
+
+All external BRD analysis output crosses one strict Zod boundary. Invalid JSON, extra fields, out-of-range completeness scores, or malformed Gherkin cause a repair prompt containing the exact parser issues. The engine makes at most three total attempts and then returns a generic human-review error without exposing model output. Deterministic fixture mode uses the same schema so local and paid-provider behavior share one client contract.
+
 2026-09-26 — Preserve the blueprint stack. Next.js App Router, Prisma 6, PostgreSQL 17, Redis 7 and BullMQ. Local infrastructure binds only loopback. Node executes queue orchestration; Python handles extraction and workbook production. Milestone gates are recorded in GATES.md. No production authentication is claimed.
 
 ## Local runtime boundary — 2026-09-26

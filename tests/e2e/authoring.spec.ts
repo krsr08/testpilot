@@ -34,4 +34,8 @@ test('recovers an enterprise AI brief after closing the builder',async({page})=>
  await page.getByRole('button',{name:'Create requirements document'}).click();
  await expect(page.getByLabel('Out-of-scope items')).toHaveValue('Policy underwriting');
  await expect(page.getByLabel('Integrations and system dependencies')).toHaveValue('Corporate identity provider');
+ await page.getByRole('button',{name:'Structure document'}).click();
+ await expect(page.getByText('Validated draft ready')).toBeVisible();
+ await expect(page.getByText(/complete · \d+ ambiguity flag/)).toBeVisible();
+ await expect(page.getByLabel('Structured requirements document')).toContainText('## BDD features');
 });

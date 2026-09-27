@@ -11,6 +11,16 @@
     }
   ],
   "paths": {
+    "/api/generate-prd": {
+      "post": {
+        "summary": "Generate a schema-validated self-healing BRD analysis and document",
+        "servers": [{"url": "http://localhost:3000"}],
+        "responses": {
+          "200": {"description": "Validated completeness, ambiguity and Gherkin analysis"},
+          "502": {"description": "Model failed to produce valid output after three attempts"}
+        }
+      }
+    },
     "/projects": {
       "get": {
         "summary": "List projects with counts",

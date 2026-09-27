@@ -20,6 +20,8 @@ Base URL: `http://localhost:3000/api/v1`. JSON is used except multipart original
 
 `POST /document-builder` accepts a product brief with `title`, `projectType`, `overview`, `users`, `inScope`, `outOfScope`, `capabilities`, `businessRules`, `integrations`, `assumptionsRisks`, `constraints`, and `acceptanceCriteria`. Multiline fields are strings with one item per line where applicable. It returns a structured Markdown product requirements document with explicit scope, dependencies and risks. The fixture generator is deterministic by default; external generation uses the configured OpenAI-compatible adapter. Both browser entry points preserve form drafts locally before generation; project documents remain versioned in PostgreSQL. The browser can download the document or submit it directly to the normal extraction pipeline.
 
+`POST /api/generate-prd` is the authenticated self-healing analysis endpoint used by both document-builder interfaces. It validates input, requests a strict `BRDAnalysis` containing a 0–100 completeness score, ambiguity flags with suggested rewrites, and parseable Gherkin features. External model output is parsed with Zod and retried with the exact validation feedback for at most three total attempts. Only validated analysis, retry count, and the rendered document reach the client; malformed model output is never returned. Fixture mode implements the same validated response contract without a paid model.
+
 ## Requirement authoring
 
 - `POST /projects/{id}/authoring-documents` creates a persistent document from `SIMPLE_PRD`, `BRD`, `SRS`, `AGILE_STORIES`, `API_REQUIREMENTS`, `DATA_MIGRATION`, or `BLANK`.
