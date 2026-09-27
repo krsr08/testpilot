@@ -6,12 +6,14 @@ import { generationApi } from '../../../../lib/generation-api';
 import { reviewApi } from '../../../../lib/review-api';
 import { exportApi } from '../../../../lib/export-api';
 import { jiraApi } from '../../../../lib/jira-api';
+import { enterpriseApi } from '../../../../lib/enterprise-api';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 async function handle(req: Request, context: {params:Promise<{path:string[]}>}) {
  try {
   const user=await actor(req); const {path}=await context.params; const url=new URL(req.url);
   req=await boundedRequest(req);
+  const enterprise=await enterpriseApi(req,path,user.id);if(enterprise)return enterprise;
   const jira=await jiraApi(req,path,user.id);if(jira)return jira;
   const exported=await exportApi(req,path,user.id);if(exported)return exported;
   const reviewed=await reviewApi(req,path,user.id);if(reviewed)return reviewed;
