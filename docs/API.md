@@ -68,6 +68,7 @@ Generation allows at most 100 snapshot requirements and 500 cases; provider requ
 ## Reliability, billing, automation and impact APIs
 
 - `GET /api/v1/projects/{id}/intelligence` returns persisted semantic change sets, correction categories, generation history and Playwright artifacts.
+- `POST /api/v1/projects/{id}/intelligence/analyze` runs the Requirement Quality, Review Assistant, Coverage Gap and Change Impact advisors. It returns four governed run IDs; recommendations are persisted as findings and never mutate or approve artifacts.
 - `POST /api/v1/projects/{id}/feedback` records a classified human correction. Case edits and rejections also create feedback automatically.
 - `POST /api/v1/projects/{id}/automation/generate` accepts approved, non-stale `testCaseIds` and creates versioned Playwright TypeScript drafts.
 - `GET /api/v1/projects/{id}/automation/{artifactId}/download` downloads the private TypeScript draft.

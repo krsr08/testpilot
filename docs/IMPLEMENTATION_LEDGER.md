@@ -10,7 +10,7 @@ This file is the durable hand-off record for the staged product build. Update it
 | A2 | Effective platform → organization → project resolver, active config pinning, cost accounting helpers | Complete |
 | B | Migrate authoring, extraction, story and test generation into governed agent runs | Complete |
 | C | Independent grounding/test-design verifiers, findings inbox actions, evidence review | Complete |
-| D | Review assistant, requirement quality, coverage proposals and change-impact UI | Planned |
+| D | Review assistant, requirement quality, coverage proposals and change-impact UI | Complete |
 | E | UI discovery, script verification, execution analysis and repair | Planned |
 | F | Confluence, SharePoint and Figma synchronization with conflict handling | Planned |
 | G | Evaluation Lab, config improvement proposals, dashboards and enterprise hardening | Planned |
@@ -53,3 +53,18 @@ Complete Stage C by running independent grounding and test-design verification a
 ## Next implementation checkpoint
 
 Begin Stage D with requirement-quality scoring, review-assistant recommendations, coverage-gap proposals and change-impact views. Recommendations remain advisory and require explicit human decisions.
+
+## Stage D delivered — 2026-09-28
+
+- Added a governed advisory-analysis action to the project Intelligence Center.
+- Requirement Quality scores atomicity, ambiguity, detail and testability while preserving the source requirement unchanged.
+- Coverage Gap identifies included requirements without active linked cases and proposes review actions.
+- Review Assistant identifies stale, draft and rejected cases that need human attention.
+- Change Impact converts the latest immutable snapshot comparison into reviewer-facing recommendations linked to affected cases.
+- Each advisor runs independently with pinned configuration, an immutable run record and artifact-scoped findings in the Findings Inbox.
+- The Intelligence Center shows the latest status and open recommendation count for every advisor and explicitly states that recommendations cannot approve or modify artifacts.
+- Focused integration testing verified all four runs, quality findings and non-mutation of requirements.
+
+## Next implementation checkpoint
+
+Begin Stage E with governed Playwright script generation, independent script verification, execution-result analysis and reviewer-approved repair proposals.
