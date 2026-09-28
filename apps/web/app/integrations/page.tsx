@@ -1,1 +1,1 @@
-import {EnterprisePage} from '../../components/enterprise-page';export default function Page(){return <EnterprisePage view="integrations"/>}
+import {IntegrationCenter} from '../../components/integration-center';export default function Page(){return <IntegrationCenter/>}

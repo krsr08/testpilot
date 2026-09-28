@@ -89,11 +89,13 @@ model IntegrationConnection {
   baseUrl        String
   projectKey     String
   encryptedToken String
+  credentialRef  String             @default("")
   enabled        Boolean            @default(true)
   createdAt      DateTime           @default(now())
   updatedAt      DateTime           @updatedAt
   organization   Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   externalLinks  ExternalCaseLink[]
+  syncConflicts  IntegrationSyncConflict[]
 
   @@unique([organizationId, kind, name])
   @@index([organizationId])
@@ -112,6 +114,29 @@ model ExternalCaseLink {
 
   @@unique([integrationId, externalKey])
   @@unique([testCaseId, integrationId])
+}
+
+model IntegrationSyncConflict {
+  id              String                @id @default(uuid()) @db.Uuid
+  integrationId   String                @db.Uuid
+  projectId       String                @db.Uuid
+  externalId      String
+  entityType      String
+  entityId        String                @db.Uuid
+  localRevision   String
+  remoteRevision  String
+  localSnapshot   Json                  @default("{}")
+  remoteSnapshot  Json                  @default("{}")
+  status          String                @default("OPEN")
+  resolution      String?
+  resolvedBy      String?               @db.Uuid
+  createdAt       DateTime              @default(now())
+  resolvedAt      DateTime?
+  integration     IntegrationConnection @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+  project         Project               @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId, status, createdAt])
+  @@index([integrationId, externalId])
 }
 
 model Project {
@@ -156,6 +181,7 @@ model Project {
   userStories         UserStory[]
   externalLinks       ExternalLink[]
   agentRuns           AgentRun[]
+  syncConflicts       IntegrationSyncConflict[]
 
   @@unique([workspaceId, name])
   @@index([createdBy, updatedAt])

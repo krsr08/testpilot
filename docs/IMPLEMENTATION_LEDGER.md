@@ -12,7 +12,7 @@ This file is the durable hand-off record for the staged product build. Update it
 | C | Independent grounding/test-design verifiers, findings inbox actions, evidence review | Complete |
 | D | Review assistant, requirement quality, coverage proposals and change-impact UI | Complete |
 | E | UI discovery, script verification, execution analysis and repair | Complete |
-| F | Confluence, SharePoint and Figma synchronization with conflict handling | Planned |
+| F | Confluence, SharePoint and Figma synchronization with conflict handling | In progress |
 | G | Evaluation Lab, config improvement proposals, dashboards and enterprise hardening | Planned |
 
 ## Stage A1 delivered — 2026-09-28
@@ -82,3 +82,13 @@ Begin Stage E with governed Playwright script generation, independent script ver
 ## Next implementation checkpoint
 
 Begin Stage F with governed external synchronization, encrypted connection configuration, inbound/outbound revision mapping and conflict-resolution workflows for Confluence, SharePoint and Figma.
+
+### Stage F progress — 2026-09-29
+
+- Added workspace-admin connection configuration for Confluence, SharePoint and Figma using secret-manager references; credential values are never accepted or returned.
+- Added governed Integration Sync runs with project/external-resource revision mappings.
+- Added durable conflict records when local and remote revisions both change, plus blocking findings in the Findings Inbox.
+- Added reviewer-only Keep Local and Accept Remote decisions with mandatory reasons.
+- Replaced the static Integrations screen with connection cards, synchronization controls and a conflict-resolution queue.
+- Applied the `20260929000000_integration_sync_governance` migration and verified configuration, first sync, conflict detection and resolution in an integration test.
+- Remaining Stage F gate: activate provider-specific authenticated transport adapters and contract tests against controlled Confluence, Microsoft Graph and Figma sandboxes.

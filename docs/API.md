@@ -93,6 +93,12 @@ The free plan allows three new source documents per workspace per UTC calendar m
 - `GET|PATCH /profile/preferences` manages locale, timezone, notifications and reduced-motion preferences.
 - `GET /projects/{id}/operations` reports recent jobs, generations and exports.
 
+## External synchronization
+
+- `GET|POST /enterprise/integrations` lists or configures Confluence, SharePoint and Figma connections. Configuration accepts only `env://`, `vault://`, `aws-sm://`, or `azure-kv://` credential references; credential values are never stored or returned.
+- `POST /enterprise/integrations/{connectionId}/sync` records a governed pull or push revision mapping. If local and remote revisions both changed, it returns HTTP 409 and creates a blocking conflict instead of overwriting either side.
+- `PATCH /enterprise/integrations/conflicts/{conflictId}` resolves an open conflict with `KEEP_LOCAL` or `ACCEPT_REMOTE` and a mandatory review note.
+
 ## SCIM 2.0 provisioning
 
 SCIM uses the separate `/api/scim/v2` surface and a workspace-scoped bearer token configured through `SCIM_BEARER_TOKEN` and `SCIM_WORKSPACE_ID`. The token must contain at least 32 characters and must be stored in the deployment secret manager.
