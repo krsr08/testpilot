@@ -9,6 +9,7 @@ import { z } from 'zod';
 import { db } from '../../packages/db';
 import { readStorage, storageMode, storagePath } from '../../apps/web/lib/storage';
 import { extractionSchema } from './segmentation';
+import {finishAgentRun,startAgentRun} from '../../apps/web/lib/agent-config';
 
 const execute = promisify(execFile);
 export class ProcessingError extends Error {}
@@ -25,6 +26,7 @@ export async function extractSource(jobId: string) {
   const job = await db.job.findUniqueOrThrow({ where: { id: jobId } });
   const source = await db.sourceDocument.findUniqueOrThrow({ where: { id: job.entityId } });
   if (source.status === 'succeeded') return;
+  const project=await db.project.findUniqueOrThrow({where:{id:source.projectId},include:{workspace:true}});const governedRun=await startAgentRun({projectId:source.projectId,organizationId:project.workspace.organizationId,agentKey:'requirement-extraction',modelRoute:process.env.EXTRACTOR_MODE==='external'?(process.env.MODEL_NAME||'external'):'deterministic-fixture',inputRef:{jobId,sourceId:source.id,filename:source.filename,mime:source.mime}});
   await db.sourceDocument.update({ where: { id: source.id }, data: { status: 'running', error: null } });
   await db.job.update({ where: { id: jobId }, data: { stage: 'extracting text', progress: 20 } });
   let output: string;
@@ -86,4 +88,5 @@ export async function extractSource(jobId: string) {
       afterJson: { requirementCount: candidates.length, warningCount: extraction.warnings.length },
     } });
   }, { timeout: 30_000 });
+  await finishAgentRun(governedRun.id,{status:'SUCCEEDED',outputRef:{sourceId:source.id,requirementCount:candidates.length},validation:{schema:'passed',sourceLocations:'passed',warnings:extraction.warnings}});
 }

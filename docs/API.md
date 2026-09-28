@@ -112,3 +112,11 @@ Deactivated users are refused by both demo and OIDC authentication. Deactivation
 - `POST /stories/{id}/transition` applies submit, approve, reject, revise, and archive state transitions. Reject and archive require reasons. Production self-approval is blocked unless explicitly relaxed.
 - `POST /stories/{id}/clone` preserves requirement links and lineage. `POST /stories/{id}/split` creates linked draft children, archives the parent, and flags downstream scenarios and cases for review.
 - `GET /review-queue` returns workspace-accessible stories needing attention with aging metrics.
+
+## Governed agent operations
+
+- `GET /agent-configs`, `POST /agent-configs`, and lifecycle actions under `/agent-configs/{id}/...` manage versioned, linted agent instructions. Only an approved version can become active.
+- `GET|POST|PATCH|DELETE /model-routes` manages logical model routes without returning secret values.
+- `GET /agent-runs` lists workspace-scoped execution records; `GET /agent-runs/{id}` returns one authorized run with its configuration, route and findings.
+- `GET /agent-findings` lists review findings. `PATCH /agent-findings/{id}` accepts `ACCEPTED`, `DISMISSED`, or `WAIVED`; a waiver requires a nonempty `resolutionNote`.
+- Authoring, extraction, story generation, test design and case regeneration create governed runs automatically. Generated stories, scenarios and test cases retain the originating run ID for audit and reproducibility.

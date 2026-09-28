@@ -41,6 +41,8 @@ export async function dispatch(jobId: string) {
         } });
       }
     });
+    const agentKey={extract_source:'requirement-extraction',generate_cases:'test-design'}[job.kind];
+    if(agentKey)await db.agentRun.updateMany({where:{projectId:job.projectId,agentKey,status:'RUNNING',inputRef:{path:['jobId'],equals:jobId}},data:{status:'FAILED',finishedAt:new Date(),validation:{error:message}}}).catch(()=>{});
     console.error(JSON.stringify({ event: 'job_failed', jobId, kind: job.kind, category: 'processing_failure', durationMs: Date.now() - started }));
     throw new Error(message, { cause: error });
   }

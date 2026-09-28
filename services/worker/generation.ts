@@ -4,11 +4,14 @@ import { db } from '../../packages/db';
 import { ProcessingError } from './extraction';
 import { fixtureGenerate, generateExternal } from './providers';
 import { caseTypeSchema, snapshotSchema, validateGeneration, type GenerationOutput } from './schemas';
+import { finishAgentRun, startAgentRun } from '../../apps/web/lib/agent-config';
 
 export async function generateCases(jobId: string) {
   const job = await db.job.findUniqueOrThrow({ where: { id: jobId } });
-  const run = await db.generationRun.findUniqueOrThrow({ where: { id: job.entityId }, include: { snapshot: true, project: true } });
+  const run = await db.generationRun.findUniqueOrThrow({ where: { id: job.entityId }, include: { snapshot: true, project: {include:{workspace:true}} } });
   if (run.status === 'succeeded') return;
+  const priorAgentRun=await db.agentRun.findFirst({where:{projectId:run.projectId,agentKey:'test-design',inputHash:run.snapshotHash},orderBy:{startedAt:'desc'}});
+  const governedRun=await startAgentRun({projectId:run.projectId,organizationId:run.project.workspace.organizationId,agentKey:'test-design',modelRoute:run.modelId,inputRef:{jobId,generationRunId:run.id,snapshotHash:run.snapshotHash,types:run.types},snapshotId:run.snapshotId,parentRunId:priorAgentRun?.status==='FAILED'?priorAgentRun.id:undefined});
   await db.generationRun.update({ where: { id: run.id }, data: { status: 'running', startedAt: new Date(), error: null, completedAt: null } });
   try {
     const snapshotResult = snapshotSchema.safeParse(run.snapshot.items);
@@ -52,7 +55,7 @@ export async function generateCases(jobId: string) {
         const linkedStory = approvedStories.find(item => item.requirementLinks.some(link => scenarioRequirementIds.has(link.requirementId)));
         const scenario = await tx.scenario.create({ data: {
           projectId: run.projectId, runId: run.id, storyId: linkedStory?.id, stableCode: `SCN-${String(scenarioNumber++).padStart(3, '0')}`,
-          title: candidate.title, description: candidate.description, createdBy: job.createdBy, updatedBy: job.createdBy,
+          title: candidate.title, description: candidate.description, generatedByRunId:governedRun.id, createdBy: job.createdBy, updatedBy: job.createdBy,
         } });
         for (const candidateCase of candidate.cases) {
           const stale = candidateCase.requirementIds.some((id) => revisions.get(id)?.revision !== input.get(id)?.revision || revisions.get(id)?.deletedAt !== null);
@@ -62,7 +65,7 @@ export async function generateCases(jobId: string) {
             title: candidateCase.title, type: candidateCase.type, priority: candidateCase.priority,
             preconditions: candidateCase.preconditions, testData: candidateCase.testData,
             postconditions: candidateCase.postconditions, rationale: candidateCase.rationale,
-            stale, createdBy: job.createdBy, updatedBy: job.createdBy,
+            stale, generatedByRunId:governedRun.id, createdBy: job.createdBy, updatedBy: job.createdBy,
             steps: { create: candidateCase.steps.map((step, index) => ({ position: index + 1, ...step })) },
             links: { create: candidateCase.requirementIds.map((requirementId) => ({ requirementId, rationale: candidateCase.rationale, createdBy: job.createdBy })) },
           } });
@@ -86,6 +89,7 @@ export async function generateCases(jobId: string) {
         afterJson: { scenarios: validated.scenarios.length, cases: caseCount, provider: run.provider, snapshotHash: run.snapshotHash },
       } });
     }, { timeout: 60_000 });
+    await finishAgentRun(governedRun.id,{status:'SUCCEEDED',outputRef:{generationRunId:run.id,scenarioCount:validated.scenarios.length,caseCount},validation:{schema:'passed',citations:'passed',links:'passed'}}).catch(error=>console.error(JSON.stringify({event:'agent_ledger_finish_failed',agentRunId:governedRun.id,error:error instanceof Error?error.message:'unknown'})));
   } catch (error) {
     const message = error instanceof ProcessingError ? error.message : 'Generation could not be completed. No drafts were saved. Retry or check worker configuration.';
     await db.$transaction([
@@ -95,6 +99,7 @@ export async function generateCases(jobId: string) {
         afterJson: { category: 'generation_failure', provider: run.provider },
       } }),
     ]);
+    await finishAgentRun(governedRun.id,{status:'FAILED',validation:{error:message}}).catch(()=>{});
     throw new ProcessingError(message, { cause: error });
   }
 }

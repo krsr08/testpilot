@@ -400,6 +400,8 @@ model UserStory {
   parentStoryId      String?                @db.Uuid
   createdBy          String                 @db.Uuid
   authorKind         String                 @default("USER")
+  generatedByRunId   String?                @db.Uuid
+  verifiedByRunId    String?                @db.Uuid
   updatedBy          String                 @db.Uuid
   createdAt          DateTime               @default(now())
   updatedAt          DateTime               @updatedAt
@@ -523,6 +525,8 @@ model Scenario {
   description String         @default("")
   status      String         @default("draft")
   version     Int            @default(1)
+  generatedByRunId String?   @db.Uuid
+  verifiedByRunId  String?   @db.Uuid
   createdBy   String         @db.Uuid
   updatedBy   String         @db.Uuid
   createdAt   DateTime       @default(now())
@@ -554,6 +558,8 @@ model TestCase {
   stale               Boolean               @default(false)
   manual              Boolean               @default(false)
   version             Int                   @default(1)
+  generatedByRunId    String?               @db.Uuid
+  verifiedByRunId     String?               @db.Uuid
   createdBy           String                @db.Uuid
   updatedBy           String                @db.Uuid
   createdAt           DateTime              @default(now())
