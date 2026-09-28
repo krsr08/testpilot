@@ -14,6 +14,7 @@ import { billingApi } from '../../../../lib/billing-api';
 import { governanceApi } from '../../../../lib/governance-api';
 import { enforceRateLimit } from '../../../../lib/rate-limit';
 import { storyApi } from '../../../../lib/story-api';
+import { agentApi } from '../../../../lib/agent-api';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 async function handle(req: Request, context: {params:Promise<{path:string[]}>}) {
@@ -24,6 +25,7 @@ async function handle(req: Request, context: {params:Promise<{path:string[]}>}) 
   const billing=await billingApi(req,path,user.id);if(billing)return billing;
   const governed=await governanceApi(req,path,user.id);if(governed)return governed;
   const stories=await storyApi(req,path,user.id);if(stories)return stories;
+  const agents=await agentApi(req,path,user.id);if(agents)return agents;
   if(path[0]==='document-builder'&&path.length===1&&req.method==='POST')return Response.json(await buildDocument(await req.json()));
   const authored=await authoringApi(req,path,user.id);if(authored)return authored;
   const intelligent=await intelligenceApi(req,path,user.id);if(intelligent)return intelligent;
