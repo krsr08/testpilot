@@ -1,5 +1,11 @@
 # Implementation decisions
 
+## Capability-backed enterprise navigation — 2026-09-28
+
+Workspace navigation is grouped into daily work, management, and administration. Operations and Billing are dedicated screens because both already have durable backend capability and distinct user intent. Planned privacy, prompt-management, CI/CD, and connector-conflict screens remain absent until their underlying workflows exist; displaying non-functional enterprise controls would misrepresent product readiness.
+
+The sidebar scrolls independently on constrained laptop displays. Workspace KPIs use an explicit responsive grid because the prior generic metric style collapsed into an unreadable vertical stream at the in-app browser width. Project tabs retain all existing capabilities and use horizontal overflow at smaller widths.
+
 ## SCIM deactivation preserves governed history — 2026-09-28
 
 SCIM 2.0 provisions users into one explicitly configured workspace and maps the primary directory role to the existing TestPilot roles. Provisioning authentication uses a long workspace-scoped bearer secret compared in constant time. Directory deletion and `active: false` deactivate the identity instead of deleting the user, membership, authorship, revisions, or audit identifiers. Authentication rejects inactive users. This preserves evidence while meeting the immediate offboarding requirement. A future privacy-erasure workflow must use policy-controlled anonymization rather than SCIM deletion.

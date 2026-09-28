@@ -1,5 +1,7 @@
 # API usage
 
+Workspace operations: `GET /operations` returns workspace-scoped recent jobs, generation runs, exports, and summary metrics for administrators and QA leads. `/health/ready` supplies PostgreSQL, Redis, BullMQ counts, and oldest queued-job lag to the Operations Center.
+
 The machine-readable contract is [openapi.yaml](../packages/contracts/openapi.yaml), using OpenAPI 3.1 and JSON-compatible YAML. This document covers Milestones 0–3; consult the gate ledger for verification status. Export endpoints will be added with Milestone 4.
 
 Base URL: `http://localhost:3000/api/v1`. JSON is used except multipart originals and binary downloads. Local demo access requires `DEMO_AUTH=true` and a nonproduction `APP_ENV`; it selects the seeded user. Every project resource is checked against workspace membership. Mutations from a different browser origin are rejected. Do not expose demo mode to untrusted networks.
