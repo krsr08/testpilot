@@ -649,7 +649,7 @@ The test portfolio covers:
 - Regression corpus limits
 - Browser workflow and keyboard accessibility
 
-At the time of this document, the full Vitest suite passes **56 tests in 17 test files**, lint and TypeScript pass, all database migrations are applied, and the optimized Next.js production build succeeds.
+At the time of this document, the full Vitest suite passes **58 tests in 18 test files**, lint and TypeScript pass, all database migrations are applied, and the optimized Next.js production build succeeds.
 
 ---
 
@@ -707,7 +707,7 @@ The following capabilities are foundations or require deployment-specific activa
 7. The deterministic fixture provider demonstrates workflow rather than advanced domain reasoning.
 8. Test execution records evidence metadata; full binary evidence upload and defect lifecycle integration remain future integrations.
 9. Automation produces governed Playwright drafts; repository pull-request creation and CI execution require external integration.
-10. Database row-level security, SCIM, access-review campaigns, customer-managed encryption keys, legal hold, and device session controls are not claimed as complete.
+10. SCIM Users provisioning and deactivation are implemented. SCIM Groups/bulk operations, database row-level security, access-review campaigns, customer-managed key lifecycle, legal hold, and application-managed device sessions are not claimed as complete.
 11. Deployment-specific load, disaster-recovery, penetration, privacy, and compliance testing remain operational responsibilities.
 
 ---

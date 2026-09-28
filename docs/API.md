@@ -79,6 +79,19 @@ The free plan allows three new source documents per workspace per UTC calendar m
 - `GET|PATCH /profile/preferences` manages locale, timezone, notifications and reduced-motion preferences.
 - `GET /projects/{id}/operations` reports recent jobs, generations and exports.
 
+## SCIM 2.0 provisioning
+
+SCIM uses the separate `/api/scim/v2` surface and a workspace-scoped bearer token configured through `SCIM_BEARER_TOKEN` and `SCIM_WORKSPACE_ID`. The token must contain at least 32 characters and must be stored in the deployment secret manager.
+
+- `GET /api/scim/v2/ServiceProviderConfig` returns supported SCIM capabilities.
+- `GET /api/scim/v2/Users` lists workspace users and supports `userName eq "value"` filtering.
+- `POST /api/scim/v2/Users` provisions a user and workspace role.
+- `GET /api/scim/v2/Users/{id}` reads a provisioned user.
+- `PATCH /api/scim/v2/Users/{id}` changes `active`, `userName`, `displayName`, or the primary TestPilot role.
+- `DELETE /api/scim/v2/Users/{id}` deactivates access while retaining governed history.
+
+Deactivated users are refused by both demo and OIDC authentication. Deactivation does not destroy historical authorship or audit identifiers. Bulk and Groups endpoints are not currently advertised.
+
 ## Grounded user-story workflow
 
 - `GET /projects/{id}/stories` returns stories with requirement evidence, revisions, downstream scenarios, external links, and reverse-coverage gaps.

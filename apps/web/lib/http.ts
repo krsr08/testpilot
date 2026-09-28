@@ -17,6 +17,7 @@ export async function actor(req: Request) {
   if(process.env.DEMO_AUTH==='true' && process.env.APP_ENV!=='production') {
     const user=await db.user.findFirst({where:{email:'demo@testpilot.local'}});
     if(!user) throw new ApiError(503,'NOT_SEEDED','Run the database seed before using the app.');
+    if(!user.active) throw new ApiError(403,'ACCOUNT_DISABLED','This account has been deactivated.');
     return user;
   }
   const value=req.headers.get('authorization');
@@ -30,6 +31,7 @@ export async function actor(req: Request) {
   if(!subject||!email)throw new ApiError(401,'UNAUTHORIZED','The identity token must contain subject and email claims.');
   const user=await db.user.findFirst({where:{OR:[{externalSubject:subject},{email}]}});
   if(!user) throw new ApiError(503,'NOT_SEEDED','Run the database seed before using the app.');
+  if(!user.active)throw new ApiError(403,'ACCOUNT_DISABLED','This account has been deactivated by your identity administrator.');
   if(user.externalSubject&&user.externalSubject!==subject)throw new ApiError(403,'FORBIDDEN','This identity is already bound to another account.');
   return user.externalSubject?user:db.user.update({where:{id:user.id},data:{externalSubject:subject,name}});
 }

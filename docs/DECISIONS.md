@@ -1,5 +1,15 @@
 # Implementation decisions
 
+## SCIM deactivation preserves governed history — 2026-09-28
+
+SCIM 2.0 provisions users into one explicitly configured workspace and maps the primary directory role to the existing TestPilot roles. Provisioning authentication uses a long workspace-scoped bearer secret compared in constant time. Directory deletion and `active: false` deactivate the identity instead of deleting the user, membership, authorship, revisions, or audit identifiers. Authentication rejects inactive users. This preserves evidence while meeting the immediate offboarding requirement. A future privacy-erasure workflow must use policy-controlled anonymization rather than SCIM deletion.
+
+SCIM intentionally advertises only the behavior implemented: Users, filtering by exact user name, Patch, and bearer authentication. Groups and bulk operations remain unsupported until their membership and partial-failure semantics are implemented and tested.
+
+## Readiness includes queue lag — 2026-09-28
+
+Readiness reports BullMQ waiting, active, delayed, failed, and completed counts together with the age of the oldest database job still marked queued. The endpoint returns 503 when that age exceeds `READINESS_MAX_QUEUE_LAG_SECONDS`, defaulting to five minutes. This catches a healthy Redis service with an unavailable or stalled worker, which a ping-only check cannot detect.
+
 ## Creator-private project portfolios and requirements document builder — 2026-09-27
 
 The Projects portfolio is scoped to the authenticated creator in both list and direct-access authorization. Workspace membership remains necessary, but does not reveal another member's projects. This deliberately favors the requested personal-project model over workspace-wide collaboration; future sharing must be an explicit grant rather than an implicit consequence of membership.
