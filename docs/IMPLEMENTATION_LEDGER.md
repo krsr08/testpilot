@@ -9,7 +9,7 @@ This file is the durable hand-off record for the staged product build. Update it
 | A1 | Config versions, linting, lifecycle, model routes, run ledger, findings persistence | Complete |
 | A2 | Effective platform → organization → project resolver, active config pinning, cost accounting helpers | Complete |
 | B | Migrate authoring, extraction, story and test generation into governed agent runs | Complete |
-| C | Independent grounding/test-design verifiers, findings inbox actions, evidence review | In progress |
+| C | Independent grounding/test-design verifiers, findings inbox actions, evidence review | Complete |
 | D | Review assistant, requirement quality, coverage proposals and change-impact UI | Planned |
 | E | UI discovery, script verification, execution analysis and repair | Planned |
 | F | Confluence, SharePoint and Figma synchronization with conflict handling | Planned |
@@ -41,10 +41,15 @@ This file is the durable hand-off record for the staged product build. Update it
 
 Complete Stage C by running independent grounding and test-design verification after generation, linking verification runs to artifacts, persisting actionable findings, and presenting the cited evidence and verifier outcome in the review experience.
 
-### Stage C progress — 2026-09-28
+## Stage C delivered — 2026-09-28
 
 - Added independent grounding verification for generated stories and test cases.
 - Added an independent test-design critic for traceability, executable steps and requested case types.
 - Verifier runs retain their generator as the parent run; stories, scenarios and cases retain verifier provenance.
 - Verification findings enter the existing Findings Inbox. A verifier failure remains visible as a failed verifier run and does not discard successfully generated drafts.
-- Remaining Stage C gate: surface verifier status beside each artifact in the story and test-case review screens and complete focused UI/API tests.
+- Story and test-case review screens now show generator, grounding-verifier and test-design-critic status beside cited evidence, with direct access to the governed run ledger and Findings Inbox.
+- Review APIs return only workspace-authorized run summaries and artifact findings; focused story, generation and governance integration tests passed.
+
+## Next implementation checkpoint
+
+Begin Stage D with requirement-quality scoring, review-assistant recommendations, coverage-gap proposals and change-impact views. Recommendations remain advisory and require explicit human decisions.

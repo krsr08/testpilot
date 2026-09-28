@@ -120,3 +120,4 @@ Deactivated users are refused by both demo and OIDC authentication. Deactivation
 - `GET /agent-runs` lists workspace-scoped execution records; `GET /agent-runs/{id}` returns one authorized run with its configuration, route and findings.
 - `GET /agent-findings` lists review findings. `PATCH /agent-findings/{id}` accepts `ACCEPTED`, `DISMISSED`, or `WAIVED`; a waiver requires a nonempty `resolutionNote`.
 - Authoring, extraction, story generation, test design and case regeneration create governed runs automatically. Generated stories, scenarios and test cases retain the originating run ID for audit and reproducibility.
+- Story and test-case list responses include `agentGovernance` summaries for the artifact generator, independent verifier(s), and artifact-scoped findings. The review screens use these summaries beside the cited evidence; full run and finding records remain available through the authorized agent endpoints.

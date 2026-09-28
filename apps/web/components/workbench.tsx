@@ -4,7 +4,8 @@ import {useEffect,useRef,useState} from 'react';
 import {api,ProjectNav} from './project-nav';
 import {Icon} from './shell';
 import {CaseEditor} from './case-editor';
-export type CaseRecord={id:string;stableCode:string;title:string;type:string;priority:string;status:string;stale:boolean;version:number;preconditions:string;testData:string;postconditions:string;rationale:string;reviewerNotes:string;updatedAt:string;scenario?:{id:string;stableCode:string;title:string};steps:{position:number;action:string;expectedResult:string}[];links:{requirement:{id:string;stableCode:string;text:string}}[];citations:{id:string;sourceId?:string;locator:Record<string,unknown>;quote:string;inferred:boolean}[]};
+export type AgentRunSummary={id:string;agentKey:string;status:string;finishedAt?:string};export type AgentFindingSummary={id:string;severity:string;code:string;message:string;resolution?:string};
+export type CaseRecord={id:string;stableCode:string;title:string;type:string;priority:string;status:string;stale:boolean;version:number;preconditions:string;testData:string;postconditions:string;rationale:string;reviewerNotes:string;updatedAt:string;scenario?:{id:string;stableCode:string;title:string};steps:{position:number;action:string;expectedResult:string}[];links:{requirement:{id:string;stableCode:string;text:string}}[];citations:{id:string;sourceId?:string;locator:Record<string,unknown>;quote:string;inferred:boolean}[];agentGovernance?:{generator:AgentRunSummary|null;grounding:AgentRunSummary|null;critic:AgentRunSummary|null;findings:AgentFindingSummary[]}};
 type Run={id:string;snapshotHash:string;status:string;error?:string;provider:string;modelId:string;createdAt:string;job_id?:string};
 type Snapshot={hash:string;createdAt:string};
 export function Workbench({id}:{id:string}){

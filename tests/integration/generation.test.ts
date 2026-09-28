@@ -32,6 +32,7 @@ describe('Milestone 2: immutable source-grounded generation', () => {
     expect(list.status).toBe(200);
     const { cases } = await list.json();
     expect(cases.length).toBeGreaterThanOrEqual(items.length);
+    expect(cases.every((item:{agentGovernance?:{generator?:{status:string};grounding?:{status:string};critic?:{status:string}}})=>item.agentGovernance?.generator?.status==='SUCCEEDED'&&['SUCCEEDED','NEEDS_HUMAN'].includes(item.agentGovernance?.grounding?.status||'')&&item.agentGovernance?.critic?.status==='SUCCEEDED')).toBe(true);
     const knownIds = new Set(items.map(item => item.id));
     const knownSourceIds = new Set(items.map(item => item.sourceId));
     for (const testCase of cases) {
