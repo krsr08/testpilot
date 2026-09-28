@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { ZodError } from 'zod';
 import { db } from './db';
 import { createRemoteJWKSet, jwtVerify } from 'jose';
+import { authCookies } from './auth';
 export class ApiError extends Error { constructor(public status: number, public code: string, message: string, public fields: unknown = {}) { super(message); } }
 export async function boundedRequest(req:Request) {
   if(!req.body||['GET','HEAD'].includes(req.method))return req;
@@ -21,13 +22,15 @@ export async function actor(req: Request) {
     return user;
   }
   const value=req.headers.get('authorization');
-  if(!value?.startsWith('Bearer '))throw new ApiError(401,'UNAUTHORIZED','A valid enterprise identity token is required.');
+  const cookieToken=req.headers.get('cookie')?.split(';').map(value=>value.trim().split('=')).find(([name])=>name===authCookies.session)?.slice(1).join('=');
+  const token=value?.startsWith('Bearer ')?value.slice(7):cookieToken ? decodeURIComponent(cookieToken) : '';
+  if(!token)throw new ApiError(401,'UNAUTHORIZED','A valid enterprise identity session is required.');
   const issuer=process.env.OIDC_ISSUER, audience=process.env.OIDC_AUDIENCE, jwks=process.env.OIDC_JWKS_URL;
   if(!issuer||!audience||!jwks)throw new ApiError(503,'AUTH_NOT_CONFIGURED','OIDC authentication is not configured.');
   let payload;
-  try { payload=(await jwtVerify(value.slice(7),createRemoteJWKSet(new URL(jwks)),{issuer,audience})).payload; }
+  try { payload=(await jwtVerify(token,createRemoteJWKSet(new URL(jwks)),{issuer,audience})).payload; }
   catch { throw new ApiError(401,'UNAUTHORIZED','The identity token is invalid or expired.'); }
-  const subject=String(payload.sub||''),email=String(payload.email||'').toLowerCase(),name=String(payload.name||email);
+  const subject=String(payload.sub||''),email=String(payload.email||payload.preferred_username||payload.upn||'').toLowerCase(),name=String(payload.name||email);
   if(!subject||!email)throw new ApiError(401,'UNAUTHORIZED','The identity token must contain subject and email claims.');
   const user=await db.user.findFirst({where:{OR:[{externalSubject:subject},{email}]}});
   if(!user) throw new ApiError(503,'NOT_SEEDED','Run the database seed before using the app.');

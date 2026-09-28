@@ -1,0 +1,2 @@
+import Link from 'next/link';import {AuthScreen} from '../../components/auth-screen';import {demoAuthEnabled} from '../../lib/auth';
+export default function Page(){return <AuthScreen eyebrow="SESSION CLOSED" title="You’re signed out" description="Your TestPilot AI session has been cleared from this browser. You can safely close this window." footer={<span>On a shared computer, also close all browser windows.</span>}><Link className="button primary auth-primary" href="/sign-in">{demoAuthEnabled()?'Return to demo':'Sign in again'}</Link></AuthScreen>}

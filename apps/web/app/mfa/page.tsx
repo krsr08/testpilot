@@ -1,0 +1,2 @@
+import Link from 'next/link';import {AuthScreen} from '../../components/auth-screen';
+export default function Page(){return <AuthScreen eyebrow="MULTI-FACTOR AUTHENTICATION" title="Verify it’s you" description="Your organization controls multi-factor authentication. Continue to sign in and complete the verification method it requests." footer={<span>Contact your identity administrator if you cannot access your verification method.</span>}><Link className="button primary auth-primary" href="/api/auth/login">Continue securely</Link></AuthScreen>}

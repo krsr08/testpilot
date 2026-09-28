@@ -1,5 +1,9 @@
 # Implementation decisions
 
+## Managed identity browser session — 2026-09-28
+
+The web product uses OIDC Authorization Code with PKCE, state, and nonce. The callback validates the provider-signed ID token and stores the access token only in a secure HTTP-only same-site cookie with an eight-hour maximum lifetime. Workspace pages use an early cookie-presence redirect for user experience; every API request remains the authoritative security boundary and independently verifies token signature, issuer, audience, expiry, user activation, and workspace access. Password entry, reset, email verification, and MFA stay at the identity provider. Dedicated TestPilot pages explain and hand off those flows without collecting credentials. Local demo authentication is disabled whenever `APP_ENV=production`.
+
 ## Capability-backed enterprise navigation — 2026-09-28
 
 Workspace navigation is grouped into daily work, management, and administration. Operations and Billing are dedicated screens because both already have durable backend capability and distinct user intent. Planned privacy, prompt-management, CI/CD, and connector-conflict screens remain absent until their underlying workflows exist; displaying non-functional enterprise controls would misrepresent product readiness.

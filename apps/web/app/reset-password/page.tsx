@@ -1,0 +1,2 @@
+import Link from 'next/link';import {AuthScreen} from '../../components/auth-screen';
+export default function Page(){return <AuthScreen eyebrow="PASSWORD RESET" title="Choose a new password" description="For your security, passwords are managed by your organization. Continue to its protected recovery page to verify your identity and choose a new password." footer={<Link href="/sign-in">Return to sign in</Link>}><Link className="button primary auth-primary" href="/api/auth/recover">Open secure password reset</Link></AuthScreen>}

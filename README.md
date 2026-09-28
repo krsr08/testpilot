@@ -67,6 +67,12 @@ The complete journey is: create project → upload PDF/DOCX/TXT or paste a story
 
 Set `GENERATOR_MODE=external`, `MODEL_BASE_URL` (an OpenAI-compatible base URL such as an endpoint ending in `/v1`), `MODEL_NAME`, and optionally `MODEL_API_KEY`; restart web and worker. `MODEL_JSON_SCHEMA=false` uses JSON-object output when the provider does not support JSON schema responses. Settings displays the destination without credentials. Requirements and excerpts are sent only in explicitly configured external mode.
 
+## Sign-in and account recovery
+
+Local development uses `DEMO_AUTH=true`; open `/sign-in` and continue with the seeded administrator. Production sets `DEMO_AUTH=false` and configures the OIDC issuer, API audience, JWKS URL, client ID, authorization URL, token URL, optional client secret, end-session URL, and password-reset URL from `.env.example`. Register `${APP_URL}/api/auth/callback` as an allowed redirect URI and `${APP_URL}/signed-out` as an allowed post-logout URI with the identity provider.
+
+The browser uses Authorization Code with PKCE, state, and nonce. Provider tokens remain in HTTP-only, same-site cookies and never enter browser JavaScript or local storage. Passwords, email verification, and MFA remain with the identity provider. TestPilot supplies branded hand-off and result pages at `/sign-in`, `/forgot-password`, `/reset-password`, `/verify-email`, `/mfa`, `/session-expired`, `/access-denied`, and `/signed-out`.
+
 ## Data and operational limits
 
 See [data policy](docs/DATA_POLICY.md), [runbook](docs/runbook.md), [API usage](docs/API.md), [enterprise deployment](docs/ENTERPRISE.md), and [decisions](docs/DECISIONS.md). Development uses demo authentication and local storage. Enterprise mode adds OIDC, workspace-scoped SCIM Users provisioning, organization-backed tenancy, role gates, encrypted S3-compatible storage, ClamAV, OCR, Jira/Xray synchronization, containers, Helm and OTLP tracing. Target identity, SCIM secret, object-storage and Jira configurations still require deployment-specific acceptance. Generated workbooks expire after 24 hours, and fixture generation always creates drafts.

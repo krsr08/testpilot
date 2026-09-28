@@ -1,0 +1,3 @@
+import {NextRequest,NextResponse} from 'next/server';import {authCookies,demoAuthEnabled} from './lib/auth';
+export function proxy(request:NextRequest){if(demoAuthEnabled()||request.cookies.has(authCookies.session))return NextResponse.next();const url=new URL('/sign-in',request.url);url.searchParams.set('returnTo',`${request.nextUrl.pathname}${request.nextUrl.search}`);return NextResponse.redirect(url)}
+export const config={matcher:['/','/projects/:path*','/workspace/:path*','/review-queue/:path*','/search/:path*','/notifications/:path*','/team/:path*','/integrations/:path*','/operations/:path*','/audit/:path*','/billing/:path*','/settings/:path*','/profile/:path*']};

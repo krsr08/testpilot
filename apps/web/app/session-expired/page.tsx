@@ -1,0 +1,2 @@
+import Link from 'next/link';import {AuthScreen} from '../../components/auth-screen';
+export default function Page(){return <AuthScreen eyebrow="SESSION EXPIRED" title="Sign in to continue" description="Your session ended to protect your workspace. Sign in again and you’ll return to your projects." footer={<span>Your saved work remains available in the workspace.</span>}><Link className="button primary auth-primary" href="/api/auth/login">Sign in again</Link></AuthScreen>}

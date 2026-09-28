@@ -1,5 +1,14 @@
 # API usage
 
+## Browser authentication
+
+- `GET /api/auth/login?returnTo=/projects` starts OIDC Authorization Code with PKCE and short-lived HTTP-only anti-forgery cookies.
+- `GET /api/auth/callback` validates state and the signed ID token, exchanges the code, and creates an HTTP-only access-token session lasting no longer than eight hours.
+- `GET /api/auth/logout` clears the local session and, when configured, continues to the identity provider's end-session endpoint.
+- `GET /api/auth/recover` sends the user to the configured identity-provider password recovery flow.
+
+API routes accept a validated browser session cookie or an `Authorization: Bearer <access_token>` header. Both forms are verified against the configured issuer, audience, and JWKS before user binding and workspace authorization.
+
 Workspace operations: `GET /operations` returns workspace-scoped recent jobs, generation runs, exports, and summary metrics for administrators and QA leads. `/health/ready` supplies PostgreSQL, Redis, BullMQ counts, and oldest queued-job lag to the Operations Center.
 
 The machine-readable contract is [openapi.yaml](../packages/contracts/openapi.yaml), using OpenAPI 3.1 and JSON-compatible YAML. This document covers Milestones 0–3; consult the gate ledger for verification status. Export endpoints will be added with Milestone 4.

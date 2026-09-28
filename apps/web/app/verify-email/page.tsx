@@ -1,0 +1,2 @@
+import Link from 'next/link';import {AuthScreen} from '../../components/auth-screen';
+export default function Page(){return <AuthScreen eyebrow="EMAIL VERIFICATION" title="Check your email" description="Follow the verification link sent by your identity provider. The link may expire, so complete this step before returning to TestPilot AI." footer={<Link href="/forgot-password">Need account help?</Link>}><Link className="button primary auth-primary" href="/sign-in">Continue to sign in</Link></AuthScreen>}
