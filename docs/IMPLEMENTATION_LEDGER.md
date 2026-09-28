@@ -40,3 +40,11 @@ This file is the durable hand-off record for the staged product build. Update it
 ## Next implementation checkpoint
 
 Complete Stage C by running independent grounding and test-design verification after generation, linking verification runs to artifacts, persisting actionable findings, and presenting the cited evidence and verifier outcome in the review experience.
+
+### Stage C progress — 2026-09-28
+
+- Added independent grounding verification for generated stories and test cases.
+- Added an independent test-design critic for traceability, executable steps and requested case types.
+- Verifier runs retain their generator as the parent run; stories, scenarios and cases retain verifier provenance.
+- Verification findings enter the existing Findings Inbox. A verifier failure remains visible as a failed verifier run and does not discard successfully generated drafts.
+- Remaining Stage C gate: surface verifier status beside each artifact in the story and test-case review screens and complete focused UI/API tests.
