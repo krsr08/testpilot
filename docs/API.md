@@ -71,8 +71,10 @@ Generation allows at most 100 snapshot requirements and 500 cases; provider requ
 - `POST /api/v1/projects/{id}/intelligence/analyze` runs the Requirement Quality, Review Assistant, Coverage Gap and Change Impact advisors. It returns four governed run IDs; recommendations are persisted as findings and never mutate or approve artifacts.
 - `POST /api/v1/projects/{id}/feedback` records a classified human correction. Case edits and rejections also create feedback automatically.
 - `POST /api/v1/projects/{id}/automation/generate` accepts approved, non-stale `testCaseIds` and creates versioned Playwright TypeScript drafts.
+- Automation generation creates separate Script Generation and Script Verifier runs and returns `agent_run_id` plus `verifier_run_id`. Artifacts retain both provenance identifiers.
 - `GET /api/v1/projects/{id}/automation/{artifactId}/download` downloads the private TypeScript draft.
 - `POST /api/v1/projects/{id}/automation/{artifactId}/fallback` records a runtime selector fallback and creates a repair suggestion. The working selector must already be in the governed ranked candidate list.
+- Runtime fallback reports create independent Execution Analysis and Script Repair runs. The repair response includes `analysis_run_id` and `repair_run_id`; proposed code is never applied before review.
 - `POST /api/v1/projects/{id}/automation/{artifactId}/repairs/{suggestionId}` with `approve` or `reject` applies or rejects the repair under human control.
 - `GET /api/v1/billing` returns the workspace plan and current monthly document use.
 - `POST /api/v1/billing/checkout` is administrator-only and creates a managed Stripe subscription Checkout session.

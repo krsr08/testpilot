@@ -11,7 +11,7 @@ This file is the durable hand-off record for the staged product build. Update it
 | B | Migrate authoring, extraction, story and test generation into governed agent runs | Complete |
 | C | Independent grounding/test-design verifiers, findings inbox actions, evidence review | Complete |
 | D | Review assistant, requirement quality, coverage proposals and change-impact UI | Complete |
-| E | UI discovery, script verification, execution analysis and repair | Planned |
+| E | UI discovery, script verification, execution analysis and repair | Complete |
 | F | Confluence, SharePoint and Figma synchronization with conflict handling | Planned |
 | G | Evaluation Lab, config improvement proposals, dashboards and enterprise hardening | Planned |
 
@@ -68,3 +68,17 @@ Begin Stage D with requirement-quality scoring, review-assistant recommendations
 ## Next implementation checkpoint
 
 Begin Stage E with governed Playwright script generation, independent script verification, execution-result analysis and reviewer-approved repair proposals.
+
+## Stage E delivered — 2026-09-28
+
+- Routed Playwright generation through the governed Script Generation agent and retained the originating run on each automation artifact.
+- Added an independent Script Verifier with static checks for executable Playwright structure and unsafe dynamic or environment access.
+- Preserved ranked locator candidates in generated code and recorded runtime fallback reports through a separate Execution Analysis run.
+- Routed proposed selector reordering through the Script Repair agent; proposals remain pending until a reviewer explicitly approves or rejects them.
+- Added generation and verification indicators to automation artifacts in the Intelligence Center.
+- Applied the `20260928230000_automation_agent_provenance` migration.
+- Focused unit/integration tests verified all four agent runs, persisted provenance, fallback classification and the pending human approval gate.
+
+## Next implementation checkpoint
+
+Begin Stage F with governed external synchronization, encrypted connection configuration, inbound/outbound revision mapping and conflict-resolution workflows for Confluence, SharePoint and Figma.

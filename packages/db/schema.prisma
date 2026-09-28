@@ -607,6 +607,8 @@ model AutomationArtifact {
   selectors  Json                         @default("[]")
   status     String                       @default("draft")
   version    Int                          @default(1)
+  generatedByRunId String?                @db.Uuid
+  verifiedByRunId  String?                @db.Uuid
   createdBy  String                       @db.Uuid
   updatedBy  String                       @db.Uuid
   createdAt  DateTime                     @default(now())
@@ -617,6 +619,8 @@ model AutomationArtifact {
 
   @@unique([testCaseId, framework])
   @@index([projectId, updatedAt])
+  @@index([generatedByRunId])
+  @@index([verifiedByRunId])
 }
 
 model AutomationRepairSuggestion {
@@ -626,6 +630,7 @@ model AutomationRepairSuggestion {
   workingSelector Json
   proposedSource  String
   status          String             @default("pending")
+  generatedByRunId String?           @db.Uuid
   createdBy       String             @db.Uuid
   reviewedBy      String?            @db.Uuid
   createdAt       DateTime           @default(now())
@@ -633,6 +638,7 @@ model AutomationRepairSuggestion {
   artifact        AutomationArtifact @relation(fields: [artifactId], references: [id], onDelete: Cascade)
 
   @@index([artifactId, status, createdAt])
+  @@index([generatedByRunId])
 }
 
 model RequirementChangeSet {
