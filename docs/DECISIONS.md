@@ -125,3 +125,7 @@ Release automation validates repository-controlled production prerequisites and 
 ## Administrator deployment configuration — 2026-09-29
 
 The Settings workspace records an organization-owned deployment configuration manifest with inline explanations for application, AI, storage, identity, operations, connector, and billing values. Only workspace administrators can read or update it. It stores non-secret values and secret-manager references (`env://`, `vault://`, `aws-sm://`, or `azure-kv://`) only; raw passwords, API keys, tokens, database URLs, and Redis URLs are rejected. The manifest is deliberately not a live environment-variable editor: database, Redis, public URL, OIDC bootstrap, and process secrets are established by the deployment pipeline and require a controlled rollout/restart. This keeps browser access from silently rewiring a running production service while giving the deployment owner a reviewed configuration record.
+
+## Document governance workflow — 2026-09-29
+
+Requirement documents remain editable and preserve every saved revision. Review submission moves a document into `IN_REVIEW`; an administrator or QA lead records a reasoned approval or change request. Version restoration creates a new `DRAFT` revision from the selected historical content instead of mutating history. Comments are project-scoped, belong to the document, and are audit-recorded. Extraction remains available for existing draft workflows to preserve compatibility, while the repository makes the recommended reviewed path explicit.

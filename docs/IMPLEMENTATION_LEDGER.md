@@ -115,6 +115,16 @@ Begin Stage G with production release evidence: deployment profiles, backup/rest
 
 Stages A through G are implemented. Customer production activation remains a deployment acceptance activity because the repository cannot contain tenant secrets or substitute for the customer's identity, connector, backup-retention, security and disaster-recovery approvals.
 
+## Product experience completion program
+
+### Tranche 1 — document governance — 2026-09-29
+
+- Added a project-level Document repository alongside Author and Requirements.
+- Added searchable status filtering, document preview, downloadable source artifact access, review submission, reviewer approval or requested changes, review notes, and an audit record for every decision.
+- Added durable document comment threads and version restoration. Restoring content creates a new draft revision; it never rewrites a previous version.
+- Preserved existing source-grounded extraction, optimistic version checks, templates, AI-assisted authoring, and document export.
+- Next tranche: strengthen story and test-case workbenches with richer filtering, bulk review, assignment, and evidence workflows.
+
 ### Settings configuration workspace — 2026-09-29
 
 - Added an administrator-only Settings workspace for the deploy-time configuration catalog, with field-level tooltips and safe secret-reference validation.

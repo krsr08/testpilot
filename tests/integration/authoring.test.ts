@@ -25,6 +25,28 @@ describe('requirements document authoring',()=>{
   const result=await submitted.json();
   expect(result.source).toMatchObject({projectId,filename:'Supplier_Portal_Requirements.txt'});
   expect((await api(`/authoring-documents/${created.id}/process`,{method:'POST'})).status).toBe(409);
-  expect((await waitForJob(result.job_id)).status).toBe('succeeded');
+ expect((await waitForJob(result.job_id)).status).toBe('succeeded');
+ });
+
+ it('governs review comments and restores a prior document version',async()=>{
+  const projectId=await createProject('Document governance');
+  const created=await (await api(`/projects/${projectId}/authoring-documents`,jsonRequest('POST',{title:'Governed requirements',templateType:'BRD'}))).json();
+  const firstContent='# Governed requirements\n\n## Scope\nThe system shall record reliable review decisions.';
+  const v2=await (await api(`/authoring-documents/${created.id}`,jsonRequest('PATCH',{title:created.title,content:firstContent,version:created.version}))).json();
+  const submitted=await api(`/authoring-documents/${created.id}/review`,jsonRequest('POST',{action:'submit',note:'Ready for quality review.'}));
+  expect(submitted.status).toBe(200);
+  expect(await submitted.json()).toMatchObject({status:'IN_REVIEW'});
+  const rejectedApproval=await api(`/authoring-documents/${created.id}/review`,jsonRequest('POST',{action:'approve',note:''}));
+  expect(rejectedApproval.status).toBe(422);
+  const approved=await api(`/authoring-documents/${created.id}/review`,jsonRequest('POST',{action:'approve',note:'Scope and acceptance criteria are complete.'}));
+  expect(approved.status).toBe(200);
+  expect(await approved.json()).toMatchObject({status:'APPROVED'});
+  const comment=await api(`/authoring-documents/${created.id}/comments`,jsonRequest('POST',{body:'Confirm the operational owner before release.'}));
+  expect(comment.status).toBe(201);
+  const comments=await api(`/authoring-documents/${created.id}/comments`);
+  expect((await comments.json()).comments).toHaveLength(3);
+  const restored=await api(`/authoring-documents/${created.id}/revisions/1/restore`,{method:'POST'});
+  expect(restored.status).toBe(200);
+  expect(await restored.json()).toMatchObject({version:v2.version+1,status:'DRAFT'});
  });
 });
