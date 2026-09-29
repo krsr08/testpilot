@@ -91,4 +91,12 @@ Begin Stage F with governed external synchronization, encrypted connection confi
 - Added reviewer-only Keep Local and Accept Remote decisions with mandatory reasons.
 - Replaced the static Integrations screen with connection cards, synchronization controls and a conflict-resolution queue.
 - Applied the `20260929000000_integration_sync_governance` migration and verified configuration, first sync, conflict detection and resolution in an integration test.
-- Remaining Stage F gate: activate provider-specific authenticated transport adapters and contract tests against controlled Confluence, Microsoft Graph and Figma sandboxes.
+- Added provider-specific authenticated read adapters for Confluence Cloud pages, Microsoft Graph drive items and Figma file nodes.
+- Added an explicit live synchronization mode that resolves secrets only on the server, obtains the authoritative remote revision, and feeds the existing conflict gate. Existing declared-revision mode remains available for controlled demos and offline validation.
+- Restricted outbound destinations to HTTPS vendor hosts or an exact deployment allowlist, rejected local/private destinations, disabled redirects, bounded response time and size, and prevented credentials from entering responses or persistence.
+- Added contract tests for provider request construction, revision parsing, credential headers, secret-resolution failure, and SSRF controls.
+- Stage F implementation is complete. Deployment activation still requires tenant-owned provider credentials and a final smoke test against each customer's controlled sandbox; no credentials are committed to the repository.
+
+## Next implementation checkpoint
+
+Begin Stage G with production release evidence: deployment profiles, backup/restore rehearsal, operational dashboards, accessibility regression, and tenant-owned connector smoke tests.
