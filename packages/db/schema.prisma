@@ -34,6 +34,17 @@ model Organization {
   workspaces   Workspace[]
   integrations IntegrationConnection[]
   modelRoutes  AgentModelRoute[]
+  deploymentConfig OrganizationDeploymentConfig?
+}
+
+model OrganizationDeploymentConfig {
+  id             String       @id @default(uuid()) @db.Uuid
+  organizationId String       @unique @db.Uuid
+  values         Json         @default("{}")
+  updatedBy      String       @db.Uuid
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 }
 
 model Workspace {

@@ -114,3 +114,9 @@ Begin Stage G with production release evidence: deployment profiles, backup/rest
 ## Architecture program status
 
 Stages A through G are implemented. Customer production activation remains a deployment acceptance activity because the repository cannot contain tenant secrets or substitute for the customer's identity, connector, backup-retention, security and disaster-recovery approvals.
+
+### Settings configuration workspace — 2026-09-29
+
+- Added an administrator-only Settings workspace for the deploy-time configuration catalog, with field-level tooltips and safe secret-reference validation.
+- Added durable organization-level configuration storage and an API restricted to workspace administrators.
+- Settings values form a deployment manifest. Applying them to the live runtime remains a deployment-pipeline activity, with a controlled service restart, because bootstrap infrastructure and credentials cannot be safely altered from an authenticated browser session.

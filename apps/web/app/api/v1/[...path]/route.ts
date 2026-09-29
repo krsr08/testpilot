@@ -68,4 +68,4 @@ async function handle(req: Request, context: {params:Promise<{path:string[]}>}) 
   throw new ApiError(404,'NOT_FOUND','Endpoint not found.');
  }catch(error){return failure(error);}
 }
-export {handle as GET,handle as POST,handle as PATCH,handle as DELETE};
+export {handle as GET,handle as POST,handle as PUT,handle as PATCH,handle as DELETE};

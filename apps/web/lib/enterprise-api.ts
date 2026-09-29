@@ -3,11 +3,18 @@ import { ApiError } from './http';
 import {z} from 'zod';
 import {finishAgentRun,startAgentRun} from './agent-config';
 import {fetchRemoteRevision} from './integration-providers';
+import {deploymentConfigInput,runtimeConfiguration} from './deployment-config';
 
 export async function enterpriseApi(req:Request,path:string[],userId:string):Promise<Response|undefined>{
  if(path[0]!=='enterprise')return;
  const membership=await db.membership.findFirst({where:{userId},include:{user:true,workspace:{include:{organization:{include:{integrations:true}},memberships:{include:{user:true}},projects:{select:{id:true,name:true}}}}}});
  if(!membership)throw new ApiError(403,'FORBIDDEN','Workspace access required.');
+ if(path[1]==='platform-config'&&path.length===2){
+  if(membership.role!=='ADMIN')throw new ApiError(403,'FORBIDDEN','Only workspace administrators can manage deployment configuration.');
+  if(req.method==='GET'){const saved=await db.organizationDeploymentConfig.findUnique({where:{organizationId:membership.workspace.organization.id}});return Response.json({values:saved?.values||{},runtime:runtimeConfiguration,updatedAt:saved?.updatedAt||null});}
+  if(req.method==='PUT'){const body=deploymentConfigInput.parse(await req.json()),saved=await db.organizationDeploymentConfig.upsert({where:{organizationId:membership.workspace.organization.id},create:{organizationId:membership.workspace.organization.id,values:body.values,updatedBy:userId},update:{values:body.values,updatedBy:userId}});return Response.json({values:saved.values,updatedAt:saved.updatedAt});}
+  throw new ApiError(405,'METHOD_NOT_ALLOWED','Use GET or PUT for deployment configuration.');
+ }
  if(path[1]==='integrations'){
   const kinds=z.enum(['confluence','sharepoint','figma']);
   if(path.length===2&&req.method==='GET'){const connections=await db.integrationConnection.findMany({where:{organizationId:membership.workspace.organization.id,kind:{in:kinds.options}},orderBy:{updatedAt:'desc'},select:{id:true,kind:true,name:true,baseUrl:true,projectKey:true,credentialRef:true,enabled:true,createdAt:true,updatedAt:true}}),conflicts=await db.integrationSyncConflict.findMany({where:{projectId:{in:membership.workspace.projects.map(p=>p.id)},status:'OPEN'},orderBy:{createdAt:'desc'},include:{integration:{select:{kind:true,name:true}},project:{select:{name:true}}}});return Response.json({connections,conflicts,projects:membership.workspace.projects});}
