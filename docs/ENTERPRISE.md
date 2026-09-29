@@ -27,3 +27,16 @@ Set `OTEL_EXPORTER_OTLP_ENDPOINT` to enable automatic Node.js tracing. Secrets b
 ## Production launch
 
 Build and run `infra/compose.prod.yml`, or deploy `infra/helm`. Run database migrations as a controlled pre-deployment job. Validate backup restoration, object retention, identity-provider logout, scanner availability, rate limits, Jira field mappings, and tenant deletion in the target environment before accepting production traffic.
+
+Start from `.env.production.example` and run `npm run validate:production -- .env.production` before building a release. The validator rejects demo authentication, insecure public endpoints, local object storage, disabled malware scanning, incomplete OIDC/SCIM settings, missing telemetry, and weak or absent metrics authentication.
+
+Prometheus-compatible operational metrics are available at `/health/metrics` only with `Authorization: Bearer $METRICS_BEARER_TOKEN`. The endpoint exposes queue depth, running work, 24-hour job failures/completions, failed exports, and the export error ratio. Readiness remains a separate unauthenticated orchestration probe.
+
+Production Compose includes explicit backup and restore-verification jobs:
+
+```sh
+docker compose -f infra/compose.prod.yml --profile backup run --rm backup
+docker compose -f infra/compose.prod.yml --profile backup run --rm restore-verify
+```
+
+Each backup set contains a PostgreSQL custom-format dump, the private storage archive, and SHA-256 checksums. Restore verification checks the archive and restores the database into a temporary isolated database before querying migrations and projects. Schedule the backup job externally, copy backup sets to encrypted immutable storage, define retention, and alert on either command failing.

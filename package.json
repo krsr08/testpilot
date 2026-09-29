@@ -11,6 +11,8 @@
     "test": "vitest run",
     "test:integration": "vitest run tests/integration",
     "test:e2e": "playwright test",
+    "test:a11y": "playwright test tests/e2e/accessibility.spec.ts",
+    "validate:production": "tsx scripts/validate-production-env.ts",
     "db:generate": "prisma generate --schema packages/db/schema.prisma",
     "db:migrate": "prisma migrate deploy --schema packages/db/schema.prisma",
     "db:seed": "tsx packages/db/seed.ts",
@@ -37,6 +39,7 @@
     "zod": "4.6.5"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.10.2",
     "@eslint/js": "10.0.1",
     "@playwright/test": "1.63.0",
     "@types/node": "26.6.3",

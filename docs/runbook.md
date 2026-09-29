@@ -85,7 +85,14 @@ Use Ctrl+C in the app and worker terminals. Stop services without deleting data:
 docker compose -f infra/compose.yml down
 ```
 
-Back up PostgreSQL and `var/` together before preserving real work; source and export files are not stored in the database volume. This prototype has no scheduled backup service.
+Back up PostgreSQL and private storage together. The production Compose profile creates a checksummed database dump and storage archive, then verifies restoration into an isolated temporary database:
+
+```powershell
+docker compose -f infra/compose.prod.yml --profile backup run --rm backup
+docker compose -f infra/compose.prod.yml --profile backup run --rm restore-verify
+```
+
+Backup files are written to the ignored `backups/` directory. Copy completed sets to encrypted immutable storage and apply the organization's retention policy. A backup is not considered successful until restore verification passes.
 
 The following intentionally erases the entire local database and Redis volumes. It does not erase `var/` files:
 

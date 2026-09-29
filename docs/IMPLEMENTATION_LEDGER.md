@@ -100,3 +100,17 @@ Begin Stage F with governed external synchronization, encrypted connection confi
 ## Next implementation checkpoint
 
 Begin Stage G with production release evidence: deployment profiles, backup/restore rehearsal, operational dashboards, accessibility regression, and tenant-owned connector smoke tests.
+
+### Stage G delivered — 2026-09-29
+
+- Added a strict production environment gate with a deployable example profile. It blocks demo authentication, HTTP public endpoints, local production storage, disabled malware scanning, incomplete enterprise identity, missing telemetry, and unprotected metrics.
+- Added authenticated Prometheus-compatible queue, job and export reliability metrics while retaining separate liveness and readiness probes.
+- Added checksummed PostgreSQL and private-storage backup jobs plus an isolated restore-verification job to the production Compose profile.
+- Rehearsed the production backup: three migrations and seven projects restored successfully into a temporary database, and both database and storage checksums passed.
+- Added automated axe-core WCAG regression scans for Projects, Workspace, Integrations and Operations. Corrected secondary text, badge, status and table contrast defects; all four screens pass with no serious or critical violations.
+- Revalidated production Compose configuration, TypeScript, lint, unit/integration tests, optimized build, and the browser release gates.
+- Stage G implementation is complete. Tenant-specific OIDC, storage, model, telemetry and connector credentials must be supplied and smoke-tested in the target environment before production traffic is accepted.
+
+## Architecture program status
+
+Stages A through G are implemented. Customer production activation remains a deployment acceptance activity because the repository cannot contain tenant secrets or substitute for the customer's identity, connector, backup-retention, security and disaster-recovery approvals.

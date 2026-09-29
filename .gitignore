@@ -6,6 +6,7 @@ var/
 work/
 test-results/
 playwright-report/
+backups/
 *.tsbuildinfo
 __pycache__/
 .venv/

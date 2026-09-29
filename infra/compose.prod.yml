@@ -35,4 +35,18 @@ services:
   clamav:
     image: clamav/clamav:1.4
     volumes: ["clamav_data:/var/lib/clamav"]
+  backup:
+    image: postgres:17.6-alpine
+    profiles: ["backup"]
+    environment: { POSTGRES_USER: testpilot, POSTGRES_PASSWORD: testpilot_local, POSTGRES_DB: testpilot }
+    volumes: ["storage_data:/data:ro", "./backup:/scripts:ro", "../backups:/backups"]
+    entrypoint: ["/bin/sh", "/scripts/backup.sh"]
+    depends_on: { postgres: { condition: service_healthy } }
+  restore-verify:
+    image: postgres:17.6-alpine
+    profiles: ["backup"]
+    environment: { POSTGRES_USER: testpilot, POSTGRES_PASSWORD: testpilot_local, POSTGRES_DB: testpilot }
+    volumes: ["./backup:/scripts:ro", "../backups:/backups:ro"]
+    entrypoint: ["/bin/sh", "/scripts/verify-restore.sh"]
+    depends_on: { postgres: { condition: service_healthy } }
 volumes: { postgres_data: {}, redis_data: {}, clamav_data: {}, storage_data: {} }
